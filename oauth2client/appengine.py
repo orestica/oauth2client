@@ -164,6 +164,7 @@ class AppAssertionCredentials(AssertionCredentials):
           unspecified, the default service account for the app is used.
     """
     self.scope = util.scopes_to_string(scope)
+    self.kwargs = kwargs
     self.service_account_id = kwargs.get('service_account_id', None)
 
     # Assertion type is no longer used, but still in the parent class signature.
@@ -195,6 +196,13 @@ class AppAssertionCredentials(AssertionCredentials):
     except app_identity.Error, e:
       raise AccessTokenRefreshError(str(e))
     self.access_token = token
+
+  def scopesRequired(self):
+    return not bool(self.scope)
+
+  def createScoped(self, scopes):
+    return AppAssertionCredentials(scopes,
+                                   **self.kwargs)
 
 
 class FlowProperty(db.Property):

@@ -57,6 +57,7 @@ class AppAssertionCredentials(AssertionCredentials):
         requested.
     """
     self.scope = util.scopes_to_string(scope)
+    self.kwargs = kwargs
 
     # Assertion type is no longer used, but still in the parent class signature.
     super(AppAssertionCredentials, self).__init__(None)
@@ -88,3 +89,10 @@ class AppAssertionCredentials(AssertionCredentials):
       self.access_token = d['accessToken']
     else:
       raise AccessTokenRefreshError(content)
+
+  def scopesRequired(self):
+    return not bool(self.scope)
+
+  def createScoped(self, scopes):
+    return AppAssertionCredentials(scopes,
+                                   **self.kwargs)

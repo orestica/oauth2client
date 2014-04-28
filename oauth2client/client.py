@@ -169,6 +169,21 @@ class Credentials(object):
       headers: dict, the headers to add the Authorization header to.
     """
     _abstract()
+    
+  def scopesRequired(self):
+    """Whether this Credentials object is scopeless.
+    
+    createScoped(scopes) methods needs to be called in order to create
+    a proper Credentials object.
+    """
+    return False
+  
+  def createScoped(self, scopes):
+    """Creates a Credentials object for the given scopes.
+    
+    The Credentials type is preserved.
+    """ 
+    return self
 
   def _to_json(self, strip):
     """Utility function that creates JSON repr. of a Credentials object.
