@@ -255,7 +255,6 @@ def build_from_document(
   base = urlparse.urljoin(service['rootUrl'], service['servicePath'])
   schema = Schemas(service)
 
-  print service["auth"]["oauth2"]["scopes"].keys()
   if credential:
     if credential.scopesRequired():
       credential = credential.createScoped(
