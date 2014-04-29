@@ -26,6 +26,7 @@ packages = [
 
 install_requires = [
     'httplib2>=0.8',
+    'rsa',
 ]
 
 needs_json = False

@@ -1,5 +1,5 @@
 # To be used to test GoogleCredential.GetDefaultCredential()
-# from devel GAE (ie, dev_appserver).
+# from devel GAE (ie, dev_appserver.py).
 
 import webapp2
 from googleapiclient.discovery import build
