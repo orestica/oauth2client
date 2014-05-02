@@ -88,10 +88,10 @@ class ServiceAccountCredentials(AssertionCredentials):
 
     return '%s.%s' % (assertion_input, signature)
 
-  def scopesRequired(self):
+  def scopes_required(self):
     return not bool(self._scope)
 
-  def createScoped(self, scopes):
+  def create_scoped(self, scopes):
     return ServiceAccountCredentials(self._service_account_name,
                                      self._raw_private_key,
                                      scopes,

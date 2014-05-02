@@ -170,15 +170,15 @@ class Credentials(object):
     """
     _abstract()
     
-  def scopesRequired(self):
+  def scopes_required(self):
     """Whether this Credentials object is scopeless.
     
-    createScoped(scopes) methods needs to be called in order to create
+    create_scoped(scopes) method needs to be called in order to create
     a proper Credentials object.
     """
     return False
   
-  def createScoped(self, scopes):
+  def create_scoped(self, scopes):
     """Creates a Credentials object for the given scopes.
     
     The Credentials type is preserved.
