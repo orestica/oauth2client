@@ -26,6 +26,8 @@ packages = [
 
 install_requires = [
     'httplib2>=0.8',
+    'pyasn1',
+    'pyasn1_modules',
     'rsa',
 ]
 

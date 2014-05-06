@@ -26,6 +26,7 @@ import base64
 import datetime
 import httplib2
 import os
+import time
 import unittest
 import urlparse
 
@@ -84,11 +85,20 @@ class CacheMock(object):
 
 
 class CredentialsTests(unittest.TestCase):
+  def setUp(self):
+    self.credentials = Credentials()
 
   def test_to_from_json(self):
-    credentials = Credentials()
-    json = credentials.to_json()
+    json = self.credentials.to_json()
     restored = Credentials.new_from_json(json)
+
+  def test_scopes_required(self):
+    self.assertFalse(self.credentials.scopes_required())
+
+  def test_create_scoped(self):
+    self.assertEqual(self.credentials, self.credentials.create_scoped(None))
+    self.assertEqual(self.credentials,
+                     self.credentials.create_scoped(['dummy_scope']))
 
 
 class DummyDeleteStorage(Storage):
@@ -228,6 +238,32 @@ class BasicCredentialsTests(unittest.TestCase):
     self.credentials.token_response = 'foobar'
     instance = OAuth2Credentials.from_json(self.credentials.to_json())
     self.assertEqual('foobar', instance.token_response)
+
+  def test_get_access_token(self):
+    token_response_first = {'access_token': 'first_token', 'expires_in': 1}
+    token_response_second = {'access_token': 'second_token', 'expires_in': 1}
+    http = HttpMockSequence([
+        ({'status': '200'}, simplejson.dumps(token_response_first)),
+        ({'status': '200'}, simplejson.dumps(token_response_second)),
+    ])
+
+    self.assertEqual('first_token',
+                     self.credentials.get_access_token(http=http))
+    self.assertFalse(self.credentials.access_token_expired)
+    self.assertEqual(token_response_first, self.credentials.token_response)
+
+    self.assertEqual('first_token',
+                     self.credentials.get_access_token(http=http))
+    self.assertFalse(self.credentials.access_token_expired)
+    self.assertEqual(token_response_first, self.credentials.token_response)
+
+    time.sleep(1)
+    self.assertTrue(self.credentials.access_token_expired)
+
+    self.assertEqual('second_token',
+                     self.credentials.get_access_token(http=http))
+    self.assertFalse(self.credentials.access_token_expired)
+    self.assertEqual(token_response_second, self.credentials.token_response)
 
 
 class AccessTokenCredentialsTests(unittest.TestCase):

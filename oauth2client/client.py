@@ -602,6 +602,20 @@ class OAuth2Credentials(Credentials):
       return True
     return False
 
+  def get_access_token(self, http=None):
+    """Return the access token.
+
+    If the token does not exist, get one.
+    If the token expired, refresh it.
+    """
+    if self.access_token and not self.access_token_expired:
+      return self.access_token
+    else:
+      if not http:
+        http = httplib2.Http()
+      self.refresh(http)
+      return self.access_token
+
   def set_store(self, store):
     """Set the Storage for the credential.
 

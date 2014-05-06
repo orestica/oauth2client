@@ -14,7 +14,40 @@
 
 """Provides default Credentials to be used in authenticating Google APIs calls.
 
-TODO(orest): add usage example here.
+Here is an example of how to use the default credentials for a service that
+requires authentication:
+
+<code>
+from googleapiclient.discovery import build
+from oauth2client.default_credential import GoogleCredential
+
+PROJECT = 'bamboo-machine-422'  # replace this with one of your projects
+ZONE = 'us-central1-a'          # replace this with the zone you care about
+
+service = build('compute', 'v1',
+    credential=GoogleCredential.get_default_credential())
+
+resource = service.instances()
+request = resource.list(project=PROJECT, zone=ZONE)
+response = request.execute()
+
+print response
+</code>
+
+A service that does not require authentication does not need a credential
+to be passed in:
+
+<code>
+from googleapiclient.discovery import build
+from oauth2client.default_credential import GoogleCredential
+
+service = build('discovery', 'v1')
+resource = service.apis()
+request = resource.list()
+response = request.execute()
+
+print response
+</code>
 """
 
 __author__ = 'orest@google.com (Orest Bolohan)'
@@ -22,34 +55,34 @@ __author__ = 'orest@google.com (Orest Bolohan)'
 import os
 
 class GoogleCredential:
-  """Conveniently wrap the the GetDefaultCredential method.
+  """Conveniently wrap the get_default_credential method.
   
   This is to keep it in line with the Java implementation's idiom.
   """
   
   @staticmethod
-  def GetDefaultCredential(scopes=[]):
+  def get_default_credential(scopes=[]):
     """Get the default credentials with the given scopes."""
     
     default_credential_file = os.environ.get('GOOGLE_CREDENTIALS_DEFAULT')
-    well_known_file = GetWellKnownFile()
-    env_name = GetEnvironment()
+    well_known_file = get_well_known_file()
+    env_name = get_environment()
 
     if default_credential_file:
-      return GetDefaultCredentialFromFile(default_credential_file, scopes)
+      return get_default_credential_from_file(default_credential_file, scopes)
     elif well_known_file:
-      return GetDefaultCredentialFromFile(well_known_file, scopes)
+      return get_default_credential_from_file(well_known_file, scopes)
     elif env_name == 'GAE_PRODUCTION' or env_name == 'GAE_LOCAL':
-      return GetDefaultCredentialGAE(scopes)
+      return get_default_credential_GAE(scopes)
     elif env_name == 'GCE_PRODUCTION':
-      return GetDefaultCredentialGCE(scopes)
+      return get_default_credential_GCE(scopes)
     else:
       raise Exception('Either GOOGLE_CREDENTIALS_DEFAULT '
                       'environment variable must be set or you need '
                       'to run "gcloud auth login"!')
 
 
-def GetWellKnownFile():
+def get_well_known_file():
   """Get the well known file produced by command 'gcloud auth login'."""
   
   WELL_KNOWN_CREDENTIALS_FILE = "credentials_default.json"
@@ -77,7 +110,7 @@ def GetWellKnownFile():
     None
 
 
-def GetEnvironment():
+def get_environment():
   """Detect the environment the code is being run on."""
 
   server_software = os.environ.get('SERVER_SOFTWARE', '')
@@ -94,7 +127,7 @@ def GetEnvironment():
       return 'UNKNOWN'
 
 
-def GetDefaultCredentialFromFile(default_credential_file, scopes):
+def get_default_credential_from_file(default_credential_file, scopes):
   """Build the default credentials from file."""
   
   import jwt
@@ -140,6 +173,8 @@ def GetDefaultCredentialFromFile(default_credential_file, scopes):
     missing_fields = []
     if 'client_email' not in client_credentials:
       missing_fields.append('client_email')
+    if 'private_key_id' not in client_credentials:
+      missing_fields.append('private_key_id')
     if 'private_key' not in client_credentials:
       missing_fields.append('private_key')
     if len(missing_fields) > 0:
@@ -149,6 +184,7 @@ def GetDefaultCredentialFromFile(default_credential_file, scopes):
 
     return jwt.ServiceAccountCredentials(
         client_credentials['client_email'],
+        client_credentials['private_key_id'],
         client_credentials['private_key'],
         scopes)
   else:
@@ -157,13 +193,13 @@ def GetDefaultCredentialFromFile(default_credential_file, scopes):
                     "in " + default_credential_file)
 
 
-def GetDefaultCredentialGAE(scopes):
+def get_default_credential_GAE(scopes):
   from oauth2client.appengine import AppAssertionCredentials
 
   return AppAssertionCredentials(scopes)
 
 
-def GetDefaultCredentialGCE(scopes):
+def get_default_credential_GCE(scopes):
   from oauth2client.gce import AppAssertionCredentials
 
   return AppAssertionCredentials(scopes)

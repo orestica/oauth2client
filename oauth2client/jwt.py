@@ -28,6 +28,10 @@ from oauth2client import util
 from oauth2client.anyjson import simplejson
 from oauth2client.client import AssertionCredentials
 
+from pyasn1.codec.ber import decoder
+from pyasn1_modules.rfc5208 import PrivateKeyInfo
+
+
 class ServiceAccountCredentials(AssertionCredentials):
   """Class representing a service account (signed JWT) credential."""
 
@@ -38,6 +42,7 @@ class ServiceAccountCredentials(AssertionCredentials):
 
   def __init__(self,
       service_account_name,
+      private_key_id,
       private_key,
       scope,
       user_agent=None,
@@ -52,6 +57,7 @@ class ServiceAccountCredentials(AssertionCredentials):
         revoke_uri=revoke_uri)
     
     self._service_account_name = service_account_name
+    self._private_key_id = private_key_id
     self._private_key = _get_pk(private_key)
     self._raw_private_key = private_key
     self._scope = util.scopes_to_string(scope)
@@ -88,11 +94,19 @@ class ServiceAccountCredentials(AssertionCredentials):
 
     return '%s.%s' % (assertion_input, signature)
 
+  def sign_blob(self, blob):
+    return (self._private_key_id,
+            rsa.pkcs1.sign(blob, self._private_key, 'SHA-256'))
+
+  def get_service_account_name(self):
+    return self._service_account_name
+
   def scopes_required(self):
     return not bool(self._scope)
 
   def create_scoped(self, scopes):
     return ServiceAccountCredentials(self._service_account_name,
+                                     self._private_key_id,
                                      self._raw_private_key,
                                      scopes,
                                      user_agent=self._user_agent,
@@ -108,21 +122,8 @@ def _urlsafe_b64encode(data):
 def _get_pk(private_key):
   """Get an RSA private key object from a pkcs8 representation."""
 
-  start_marker = '-----BEGIN PRIVATE KEY-----'
-  end_marker = '-----END PRIVATE KEY-----'
-  pkcs8_rsa_header =\
-      '30820276020100300d06092a864886f70d010101050004820260'.decode('hex')
-
-  start_index = private_key.index(start_marker)
-  end_index = private_key.index(end_marker)
-
-  if start_index < 0 or end_index < 0 or start_index >= end_index:
-    raise Exception('The private key is expected in PKCS8 format.')
-
-  core = base64.b64decode(
-      private_key[start_index + len(start_marker):end_index])
-
-  if not core.startswith(pkcs8_rsa_header):
-    raise Exception('PKCS8 RSA header not found.')
-
-  return rsa.PrivateKey.load_pkcs1(core[len(pkcs8_rsa_header):], format='DER')
+  der = rsa.pem.load_pem(private_key, 'PRIVATE KEY')
+  asn1_private_key, _ = decoder.decode(der, asn1Spec=PrivateKeyInfo())
+  return rsa.PrivateKey.load_pkcs1(
+      asn1_private_key.getComponentByName('privateKey').asOctets(),
+      format='DER')

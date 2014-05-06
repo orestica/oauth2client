@@ -10,7 +10,7 @@ ZONE = "us-central1-a"
 
 def get_instances():
   service = build("compute", "v1",
-      credential=GoogleCredential.GetDefaultCredential())
+      credential=GoogleCredential.get_default_credential())
   resource = service.instances()
   request = resource.list(project=PROJECT, zone=ZONE)
   return request.execute()
