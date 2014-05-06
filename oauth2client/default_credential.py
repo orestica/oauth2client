@@ -64,15 +64,21 @@ class GoogleCredential:
   def get_default_credential(scopes=[]):
     """Get the default credentials with the given scopes."""
     
-    default_credential_file = os.environ.get('GOOGLE_CREDENTIALS_DEFAULT')
-    well_known_file = get_well_known_file()
     env_name = get_environment()
+    if env_name in ('GAE_PRODUCTION', 'GAE_LOCAL'):
+      # if we are running inside Google App Engine
+      # there is no need to look for credentials in local files
+      default_credential_file = None
+      well_known_file = None
+    else:
+      default_credential_file = os.environ.get('GOOGLE_CREDENTIALS_DEFAULT')
+      well_known_file = get_well_known_file()
 
     if default_credential_file:
       return get_default_credential_from_file(default_credential_file, scopes)
     elif well_known_file:
       return get_default_credential_from_file(well_known_file, scopes)
-    elif env_name == 'GAE_PRODUCTION' or env_name == 'GAE_LOCAL':
+    elif env_name in ('GAE_PRODUCTION', 'GAE_LOCAL'):
       return get_default_credential_GAE(scopes)
     elif env_name == 'GCE_PRODUCTION':
       return get_default_credential_GCE(scopes)
