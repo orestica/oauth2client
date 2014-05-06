@@ -107,7 +107,7 @@ def get_well_known_file():
   if os.path.isfile(default_config_path):
     return default_config_path
   else:
-    None
+    return None
 
 
 def get_environment():
