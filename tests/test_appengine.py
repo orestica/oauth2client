@@ -241,7 +241,7 @@ class TestAppAssertionCredentials(unittest.TestCase):
     apiproxy_stub_map.apiproxy.RegisterStub("app_identity_service",
                                             app_identity_stub)
     apiproxy_stub_map.apiproxy.RegisterStub(
-      'memcache', memcache_stub.MemcacheServiceStub())
+        'memcache', memcache_stub.MemcacheServiceStub())
 
     credentials = AppAssertionCredentials(['dummy_scope'])
     token = credentials.get_access_token()
