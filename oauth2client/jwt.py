@@ -71,7 +71,8 @@ class ServiceAccountCredentials(AssertionCredentials):
 
     header = {
         'alg': 'RS256',
-        'typ': 'JWT'
+        'typ': 'JWT',
+        'keyid': self._private_key_id
     }
 
     now = long(time.time())
