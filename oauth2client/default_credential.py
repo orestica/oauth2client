@@ -125,11 +125,15 @@ def get_environment():
   elif server_software.startswith('Development/'):
     return 'GAE_LOCAL'
   else:
-    import socket
+    import httplib2
     try:
-      socket.gethostbyname('metadata.google.internal')
-      return 'GCE_PRODUCTION'
-    except socket.gaierror:
+      response, _ = httplib2.Http().request('http://metadata.google.internal')
+      if ('metadata-flavor' in response and
+          response['metadata-flavor'] == 'Google'):
+        return 'GCE_PRODUCTION'
+      else:
+        return 'UNKNOWN'
+    except httplib2.ServerNotFoundError:
       return 'UNKNOWN'
 
 
