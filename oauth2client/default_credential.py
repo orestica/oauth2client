@@ -25,7 +25,7 @@ PROJECT = 'bamboo-machine-422'  # replace this with one of your projects
 ZONE = 'us-central1-a'          # replace this with the zone you care about
 
 service = build('compute', 'v1',
-    credential=GoogleCredential.get_default_credential())
+    credentials=GoogleCredential.get_default_credential())
 
 resource = service.instances()
 request = resource.list(project=PROJECT, zone=ZONE)
@@ -34,12 +34,11 @@ response = request.execute()
 print response
 </code>
 
-A service that does not require authentication does not need a credential
+A service that does not require authentication does not need credentials
 to be passed in:
 
 <code>
 from googleapiclient.discovery import build
-from oauth2client.default_credential import GoogleCredential
 
 service = build('discovery', 'v1')
 resource = service.apis()
