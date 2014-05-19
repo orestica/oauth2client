@@ -108,8 +108,8 @@ class CredentialsTests(unittest.TestCase):
     json = self.credentials.to_json()
     restored = Credentials.new_from_json(json)
 
-  def test_scopes_required(self):
-    self.assertFalse(self.credentials.scopes_required())
+  def test_create_scoped_required(self):
+    self.assertFalse(self.credentials.create_scoped_required())
 
   def test_create_scoped(self):
     self.assertEqual(self.credentials, self.credentials.create_scoped(None))
@@ -562,7 +562,7 @@ class OAuth2WebServerFlowTest(unittest.TestCase):
     self.assertRaises(VerifyJwtTokenError, self.flow.step2_exchange,
       'some random code', http=http)
 
-  def test_exchange_id_token_fail(self):
+  def test_exchange_id_token_fail_encore(self):
     body = {'foo': 'bar'}
     payload = base64.urlsafe_b64encode(simplejson.dumps(body)).strip('=')
     jwt = (base64.urlsafe_b64encode('stuff')+ '.' + payload + '.' +

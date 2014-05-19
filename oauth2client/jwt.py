@@ -41,10 +41,10 @@ class ServiceAccountCredentials(AssertionCredentials):
   MAX_TOKEN_LIFETIME_SECS = 3600 # 1 hour in seconds
 
   def __init__(self,
-      service_account_name,
+      service_account_email,
       private_key_id,
-      private_key,
-      scope,
+      private_key_pkcs8_text,
+      scopes,
       user_agent=None,
       token_uri=GOOGLE_TOKEN_URI,
       revoke_uri=GOOGLE_REVOKE_URI,
@@ -56,11 +56,11 @@ class ServiceAccountCredentials(AssertionCredentials):
         token_uri=token_uri,
         revoke_uri=revoke_uri)
     
-    self._service_account_name = service_account_name
+    self._service_account_email = service_account_email
     self._private_key_id = private_key_id
-    self._private_key = _get_pk(private_key)
-    self._raw_private_key = private_key
-    self._scope = util.scopes_to_string(scope)
+    self._private_key = _get_pk(private_key_pkcs8_text)
+    self._private_key_pkcs8_text = private_key_pkcs8_text
+    self._scopes = util.scopes_to_string(scopes)
     self._user_agent = user_agent
     self._token_uri = token_uri
     self._revoke_uri = revoke_uri
@@ -78,10 +78,10 @@ class ServiceAccountCredentials(AssertionCredentials):
     now = long(time.time())
     payload = {
         'aud': self._token_uri,
-        'scope': self._scope,
+        'scope': self._scopes,
         'iat': now,
         'exp': now + ServiceAccountCredentials.MAX_TOKEN_LIFETIME_SECS,
-        'iss': self._service_account_name
+        'iss': self._service_account_email
     }
     payload.update(self._kwargs)
 
@@ -99,16 +99,16 @@ class ServiceAccountCredentials(AssertionCredentials):
     return (self._private_key_id,
             rsa.pkcs1.sign(blob, self._private_key, 'SHA-256'))
 
-  def get_service_account_name(self):
-    return self._service_account_name
+  def get_service_account_email(self):
+    return self._service_account_email
 
-  def scopes_required(self):
-    return not bool(self._scope)
+  def create_scoped_required(self):
+    return not bool(self._scopes)
 
   def create_scoped(self, scopes):
-    return ServiceAccountCredentials(self._service_account_name,
+    return ServiceAccountCredentials(self._service_account_email,
                                      self._private_key_id,
-                                     self._raw_private_key,
+                                     self._private_key_pkcs8_text,
                                      scopes,
                                      user_agent=self._user_agent,
                                      token_uri=self._token_uri,
@@ -120,10 +120,10 @@ def _urlsafe_b64encode(data):
       simplejson.dumps(data, separators = (',', ':'))\
           .encode('UTF-8')).rstrip('=')
 
-def _get_pk(private_key):
+def _get_pk(private_key_pkcs8_text):
   """Get an RSA private key object from a pkcs8 representation."""
 
-  der = rsa.pem.load_pem(private_key, 'PRIVATE KEY')
+  der = rsa.pem.load_pem(private_key_pkcs8_text, 'PRIVATE KEY')
   asn1_private_key, _ = decoder.decode(der, asn1Spec=PrivateKeyInfo())
   return rsa.PrivateKey.load_pkcs1(
       asn1_private_key.getComponentByName('privateKey').asOctets(),

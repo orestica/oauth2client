@@ -3,14 +3,13 @@
 
 import webapp2
 from googleapiclient.discovery import build
-from oauth2client.default_credential import GoogleCredential
+from oauth2client.client import Credentials
 
 PROJECT = "bamboo-machine-422"  # Provide your own GCE project here
 ZONE = "us-central1-a"          # Put here a zone which has some VMs
 
 def get_instances():
-  service = build("compute", "v1",
-      credentials=GoogleCredential.get_default_credential())
+  service = build("compute", "v1", credentials=Credentials.get_default())
   resource = service.instances()
   request = resource.list(project=PROJECT, zone=ZONE)
   return request.execute()

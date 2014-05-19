@@ -89,10 +89,11 @@ class AppAssertionCredentials(AssertionCredentials):
       self.access_token = d['accessToken']
     else:
       if content.find('Error 404') >= 0:
-        content = content + ' MAYBE THE VM WAS CREATED WITH NO SERVICE ACCOUNT!'
+        content = content + (' This can occur if a VM was created'
+            ' with no service account or scopes.')
       raise AccessTokenRefreshError(content)
 
-  def scopes_required(self):
+  def create_scoped_required(self):
     return not bool(self.scope)
 
   def create_scoped(self, scopes):

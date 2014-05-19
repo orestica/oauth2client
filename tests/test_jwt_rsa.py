@@ -41,11 +41,11 @@ def datafile(filename):
 
 class ServiceAccountCredentialsTests(unittest.TestCase):
   def setUp(self):
-    self.service_account_name = 'dummy@google.com'
+    self.service_account_email = 'dummy@google.com'
     self.private_key_id = 'ABCDEF'
     self.private_key = datafile('pem_from_pkcs12.pem')
     self.scopes = ['dummy_scope']
-    self.credentials = ServiceAccountCredentials(self.service_account_name,
+    self.credentials = ServiceAccountCredentials(self.service_account_email,
                                                  self.private_key_id,
                                                  self.private_key,
                                                  [])
@@ -71,25 +71,25 @@ class ServiceAccountCredentialsTests(unittest.TestCase):
     except rsa.pkcs1.VerificationError:
       pass  # Expected
 
-  def test_get_service_account_name(self):
-    self.assertEqual(self.service_account_name,
-                     self.credentials.get_service_account_name())
+  def test_get_service_account_email(self):
+    self.assertEqual(self.service_account_email,
+                     self.credentials.get_service_account_email())
 
-  def test_scopes_required_without_scopes(self):
-    self.assertTrue(self.credentials.scopes_required())
+  def test_create_scoped_required_without_scopes(self):
+    self.assertTrue(self.credentials.create_scoped_required())
 
-  def test_scopes_required_with_scopes(self):
-    self.credentials = ServiceAccountCredentials(self.service_account_name,
+  def test_create_scoped_required_with_scopes(self):
+    self.credentials = ServiceAccountCredentials(self.service_account_email,
                                                  self.private_key_id,
                                                  self.private_key,
                                                  self.scopes)
-    self.assertFalse(self.credentials.scopes_required())
+    self.assertFalse(self.credentials.create_scoped_required())
 
   def test_create_scoped(self):
     new_credentials = self.credentials.create_scoped(self.scopes)
     self.assertNotEqual(self.credentials, new_credentials)
     #self.assertIsInstance(new_credentials, ServiceAccountCredentials)
-    self.assertEqual('dummy_scope', new_credentials._scope)
+    self.assertEqual('dummy_scope', new_credentials._scopes)
 
   def test_access_token(self):
     token_response_first = {'access_token': 'first_token', 'expires_in': 1}

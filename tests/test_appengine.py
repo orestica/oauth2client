@@ -220,13 +220,13 @@ class TestAppAssertionCredentials(unittest.TestCase):
     self.assertEqual('a_token_456', credentials.access_token)
     self.assertEqual(scope, credentials.scope)
 
-  def test_scopes_required_without_scopes(self):
+  def test_create_scoped_required_without_scopes(self):
     credentials = AppAssertionCredentials([])
-    self.assertTrue(credentials.scopes_required())
+    self.assertTrue(credentials.create_scoped_required())
 
-  def test_scopes_required_with_scopes(self):
+  def test_create_scoped_required_with_scopes(self):
     credentials = AppAssertionCredentials(['dummy_scope'])
-    self.assertFalse(credentials.scopes_required())
+    self.assertFalse(credentials.create_scoped_required())
 
   def test_create_scoped(self):
     credentials = AppAssertionCredentials([])
