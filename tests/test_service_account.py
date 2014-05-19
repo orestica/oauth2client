@@ -29,7 +29,7 @@ import unittest
 
 from http_mock import HttpMockSequence
 from oauth2client.anyjson import simplejson
-from oauth2client.jwt import ServiceAccountCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 
 
 def datafile(filename):

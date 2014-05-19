@@ -330,8 +330,8 @@ def _get_google_credentials_default():
       return default_credential_file
     else:
       raise Exception('File ' + default_credential_file +
-                      ' (pointed by GOOGLE_CREDENTIALS_DEFAULT environment variable)'
-                      ' does not exist!')
+                      ' (pointed by GOOGLE_CREDENTIALS_DEFAULT environment'
+                      ' variable) does not exist!')
 
 
 def _get_well_known_file():
@@ -387,12 +387,12 @@ def _get_default_credential_from_file(default_credential_file,
                                       google_credentials_default):
   """Build the default credentials from file."""
 
-  import jwt
+  import service_account
 
   try:
     # read the credentials from the file
     with open(default_credential_file) as default_credential:
-      client_credentials = jwt.simplejson.load(default_credential)
+      client_credentials = service_account.simplejson.load(default_credential)
 
     if ('type' not in client_credentials or
         client_credentials['type'] != 'authorized_user' and
@@ -431,7 +431,7 @@ def _get_default_credential_from_file(default_credential_file,
       if len(missing_fields) > 0:
         _raise_exception_for_missing_fields(missing_fields)
 
-      return jwt.ServiceAccountCredentials(
+      return service_account.ServiceAccountCredentials(
           client_credentials['client_email'],
           client_credentials['private_key_id'],
           client_credentials['private_key'],
@@ -460,7 +460,7 @@ def _get_default_credential_GAE():
 def _get_default_credential_GCE():
   from oauth2client.gce import AppAssertionCredentials
 
-  return AppAssertionCredentials()
+  return AppAssertionCredentials([])
 
 
 class Flow(object):
