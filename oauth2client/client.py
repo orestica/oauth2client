@@ -257,8 +257,8 @@ class Credentials(object):
     """
     return Credentials()
 
-  @classmethod
-  def get_default(cls):
+  @staticmethod
+  def get_default():
     """Provides default credentials to be used in authenticating
     Google APIs calls.
 
