@@ -24,6 +24,7 @@ __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import base64
 import datetime
+import mox
 import os
 import time
 import unittest
@@ -39,7 +40,9 @@ from oauth2client.client import AccessTokenCredentialsError
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import AssertionCredentials
 from oauth2client.client import Credentials
+from oauth2client.client import DefaultCredentialsError
 from oauth2client.client import FlowExchangeError
+from oauth2client.client import GoogleCredentials
 from oauth2client.client import MemoryCache
 from oauth2client.client import NonAsciiHeaderError
 from oauth2client.client import OAuth2Credentials
@@ -50,11 +53,18 @@ from oauth2client.client import Storage
 from oauth2client.client import TokenRevokeError
 from oauth2client.client import VerifyJwtTokenError
 from oauth2client.client import _extract_id_token
+from oauth2client.client import _get_default_credential_from_file
+from oauth2client.client import _get_environment
+from oauth2client.client import _get_environment_variable_file
+from oauth2client.client import _get_well_known_file
+from oauth2client.client import _raise_exception_for_missing_fields
+from oauth2client.client import _raise_exception_for_reading_json
 from oauth2client.client import _update_query_params
 from oauth2client.client import credentials_from_clientsecrets_and_code
 from oauth2client.client import credentials_from_code
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.clientsecrets import _loadfile
+from oauth2client.service_account import ServiceAccountCredentials
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -101,6 +111,7 @@ class CacheMock(object):
 
 
 class CredentialsTests(unittest.TestCase):
+
   def setUp(self):
     self.credentials = Credentials()
 
@@ -115,6 +126,206 @@ class CredentialsTests(unittest.TestCase):
     self.assertEqual(self.credentials, self.credentials.create_scoped(None))
     self.assertEqual(self.credentials,
                      self.credentials.create_scoped(['dummy_scope']))
+
+
+class GoogleCredentialsTests(unittest.TestCase):
+
+  def setUp(self):
+    self.env_server_software = os.environ.get('SERVER_SOFTWARE', None)
+    self.env_google_credentials_default = (
+        os.environ.get('GOOGLE_CREDENTIALS_DEFAULT', None))
+    self.env_appdata = os.environ.get('APPDATA', None)
+    self.os_name = os.name
+
+  def tearDown(self):
+    self.reset_env('SERVER_SOFTWARE', self.env_server_software)
+    self.reset_env('GOOGLE_CREDENTIALS_DEFAULT',
+                   self.env_google_credentials_default)
+    self.reset_env('APPDATA', self.env_appdata)
+    os.name = self.os_name
+
+  def reset_env(self, env, value):
+    if value is not None:
+      os.environ[env] = value
+    else:
+      if os.environ.get(env, None):
+        del os.environ[env]
+
+  def validate_service_account_credentials(self, credentials):
+    self.assertTrue(isinstance(credentials, ServiceAccountCredentials))
+    self.assertEqual('123', credentials._service_account_id)
+    self.assertEqual('dummy@google.com', credentials._service_account_email)
+    self.assertEqual('ABCDEF', credentials._private_key_id)
+    self.assertEqual('', credentials._scopes)
+
+  def validate_oauth2_credentials(self, credentials):
+    self.assertTrue(isinstance(credentials, OAuth2Credentials))
+    self.assertEqual(None, credentials.access_token)
+    self.assertEqual('123', credentials.client_id)
+    self.assertEqual('secret', credentials.client_secret)
+    self.assertEqual('alabalaportocala', credentials.refresh_token)
+    self.assertEqual(None, credentials.token_expiry)
+    self.assertEqual(GOOGLE_TOKEN_URI, credentials.token_uri)
+    self.assertEqual('Python client library', credentials.user_agent)
+
+  def test_get_environment_gae_production(self):
+    os.environ['SERVER_SOFTWARE'] = 'Google App Engine/XYZ'
+    self.assertEquals('GAE_PRODUCTION', _get_environment())
+
+  def test_get_environment_gae_local(self):
+    os.environ['SERVER_SOFTWARE'] = 'Development/XYZ'
+    self.assertEqual('GAE_LOCAL', _get_environment())
+
+  def test_get_environment_gce_production(self):
+    os.environ['SERVER_SOFTWARE'] = ''
+    m = mox.Mox()
+
+    http_request = m.CreateMock(object)
+    http_request.__call__(('http://metadata.google.internal'
+                          )).AndReturn(({'metadata-flavor':'Google'}, ''))
+
+    m.ReplayAll()
+
+    self.assertEqual('GCE_PRODUCTION', _get_environment(http_request))
+
+    m.UnsetStubs()
+    m.VerifyAll()
+
+  def test_get_environment_unknown(self):
+    os.environ['SERVER_SOFTWARE'] = ''
+    m = mox.Mox()
+
+    http_request = m.CreateMock(object)
+    http_request.__call__(('http://metadata.google.internal'
+                          )).AndReturn(({}, ''))
+
+    m.ReplayAll()
+
+    self.assertEqual('UNKNOWN', _get_environment(http_request))
+
+    m.UnsetStubs()
+    m.VerifyAll()
+
+  def test_get_environment_variable_file(self):
+    environment_variable_file = datafile(
+        os.path.join('gcloud', 'credentials_default.json'))
+    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    self.assertEqual(environment_variable_file,
+                     _get_environment_variable_file())
+
+  def test_get_environment_variable_file_error(self):
+    nonexistent_file = datafile('nonexistent')
+    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = nonexistent_file
+    try:
+      _get_environment_variable_file()
+      self.fail(nonexistent_file + ' should not exist.')
+    except DefaultCredentialsError as error:
+      self.assertEqual('File ' + nonexistent_file +
+                       ' (pointed by GOOGLE_CREDENTIALS_DEFAULT environment'
+                       ' variable) does not exist!',
+                       str(error))
+
+  def test_get_well_known_file_on_windows(self):
+    well_known_file = datafile(
+        os.path.join('gcloud', 'credentials_default.json'))
+    os.name = 'nt'
+    os.environ['APPDATA'] = DATA_DIR
+    self.assertEqual(well_known_file, _get_well_known_file())
+
+  def test_get_well_known_file_on_windows_no_file(self):
+    os.name = 'nt'
+    os.environ['APPDATA'] = os.path.join(DATA_DIR, 'nonexistentpath')
+    self.assertEqual(None, _get_well_known_file())
+
+  def test_get_default_credential_from_file_service_account(self):
+    credentials_file = datafile(
+        os.path.join('gcloud', 'credentials_default.json'))
+    credentials = _get_default_credential_from_file(credentials_file)
+    self.validate_service_account_credentials(credentials)
+
+  def test_get_default_credential_from_file_authorized_user(self):
+    credentials_file = datafile(
+        os.path.join('gcloud', 'credentials_default_authorized_user.json'))
+    credentials = _get_default_credential_from_file(credentials_file)
+    self.validate_oauth2_credentials(credentials)
+
+  def test_get_default_credential_from_malformed_file_1(self):
+    credentials_file = datafile(
+        os.path.join('gcloud', 'credentials_default_malformed_1.json'))
+    try:
+      _get_default_credential_from_file(credentials_file)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual("'type' field should be defined "
+                       "(and have one of the 'authorized_user' "
+                       "or 'service_account' values)",
+                       str(error))
+
+  def test_get_default_credential_from_malformed_file_2(self):
+    credentials_file = datafile(
+        os.path.join('gcloud', 'credentials_default_malformed_2.json'))
+    try:
+      _get_default_credential_from_file(credentials_file)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('The following field(s): '
+                       'private_key_id must be defined.',
+                       str(error))
+
+  def test_raise_exception_for_missing_fields(self):
+    missing_fields = ['first', 'second', 'third']
+    try:
+      _raise_exception_for_missing_fields(missing_fields)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('The following field(s): ' +
+                       ', '.join(missing_fields) + ' must be defined.',
+                       str(error))
+
+  def test_raise_exception_for_reading_json(self):
+    credential_file = 'any_file'
+    helping_message = ' be good'
+    error = DefaultCredentialsError('stuff happens')
+    try:
+      _raise_exception_for_reading_json(credential_file, helping_message, error)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as ex:
+      self.assertEqual('An error was encountered while reading '
+                       'json file: '+ credential_file +
+                       helping_message + ': ' + str(error),
+                       str(ex))
+
+  def test_get_default_from_environment_variable_service_account(self):
+    os.environ['SERVER_SOFTWARE'] = ''
+    environment_variable_file = datafile(
+        os.path.join('gcloud', 'credentials_default.json'))
+    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    self.validate_service_account_credentials(GoogleCredentials.get_default())
+
+  def test_get_default_from_environment_variable_authorized_user(self):
+    os.environ['SERVER_SOFTWARE'] = ''
+    environment_variable_file = datafile(
+        os.path.join('gcloud', 'credentials_default_authorized_user.json'))
+    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    self.validate_oauth2_credentials(GoogleCredentials.get_default())
+
+  def test_get_default_environment_not_set_up(self):
+    # It is normal for this test to fail if run inside
+    # a Google Compute Engine VM or after 'gcloud auth login' command
+    # has been executed on a non Windows machine.
+    os.environ['SERVER_SOFTWARE'] = ''
+    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = ''
+    os.environ['APPDATA'] = ''
+    try:
+      GoogleCredentials.get_default()
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('Either GOOGLE_CREDENTIALS_DEFAULT '
+                       'environment variable must be set or '
+                       'you need to run "gcloud auth login"! '
+                       'Please see https://developers.google.com/'
+                       'accounts/docs/default-credential',
+                        str(error))
 
 
 class DummyDeleteStorage(Storage):

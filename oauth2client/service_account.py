@@ -24,6 +24,8 @@ import rsa
 import time
 import types
 
+from oauth2client import GOOGLE_REVOKE_URI
+from oauth2client import GOOGLE_TOKEN_URI
 from oauth2client import util
 from oauth2client.anyjson import simplejson
 from oauth2client.client import AssertionCredentials
@@ -35,12 +37,10 @@ from pyasn1_modules.rfc5208 import PrivateKeyInfo
 class ServiceAccountCredentials(AssertionCredentials):
   """Class representing a service account (signed JWT) credential."""
 
-  GOOGLE_REVOKE_URI = 'https://accounts.google.com/o/oauth2/revoke'
-  GOOGLE_TOKEN_URI = 'https://accounts.google.com/o/oauth2/token'
-
   MAX_TOKEN_LIFETIME_SECS = 3600 # 1 hour in seconds
 
   def __init__(self,
+      service_account_id,
       service_account_email,
       private_key_id,
       private_key_pkcs8_text,
@@ -56,6 +56,7 @@ class ServiceAccountCredentials(AssertionCredentials):
         token_uri=token_uri,
         revoke_uri=revoke_uri)
     
+    self._service_account_id = service_account_id
     self._service_account_email = service_account_email
     self._private_key_id = private_key_id
     self._private_key = _get_pk(private_key_pkcs8_text)
@@ -106,7 +107,8 @@ class ServiceAccountCredentials(AssertionCredentials):
     return not bool(self._scopes)
 
   def create_scoped(self, scopes):
-    return ServiceAccountCredentials(self._service_account_email,
+    return ServiceAccountCredentials(self._service_account_id,
+                                     self._service_account_email,
                                      self._private_key_id,
                                      self._private_key_pkcs8_text,
                                      scopes,

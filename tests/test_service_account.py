@@ -41,11 +41,13 @@ def datafile(filename):
 
 class ServiceAccountCredentialsTests(unittest.TestCase):
   def setUp(self):
+    self.service_account_id = '123'
     self.service_account_email = 'dummy@google.com'
     self.private_key_id = 'ABCDEF'
     self.private_key = datafile('pem_from_pkcs12.pem')
     self.scopes = ['dummy_scope']
-    self.credentials = ServiceAccountCredentials(self.service_account_email,
+    self.credentials = ServiceAccountCredentials(self.service_account_id,
+                                                 self.service_account_email,
                                                  self.private_key_id,
                                                  self.private_key,
                                                  [])
@@ -79,7 +81,8 @@ class ServiceAccountCredentialsTests(unittest.TestCase):
     self.assertTrue(self.credentials.create_scoped_required())
 
   def test_create_scoped_required_with_scopes(self):
-    self.credentials = ServiceAccountCredentials(self.service_account_email,
+    self.credentials = ServiceAccountCredentials(self.service_account_id,
+                                                 self.service_account_email,
                                                  self.private_key_id,
                                                  self.private_key,
                                                  self.scopes)
@@ -88,7 +91,7 @@ class ServiceAccountCredentialsTests(unittest.TestCase):
   def test_create_scoped(self):
     new_credentials = self.credentials.create_scoped(self.scopes)
     self.assertNotEqual(self.credentials, new_credentials)
-    #self.assertIsInstance(new_credentials, ServiceAccountCredentials)
+    self.assertTrue(isinstance(new_credentials, ServiceAccountCredentials))
     self.assertEqual('dummy_scope', new_credentials._scopes)
 
   def test_access_token(self):
