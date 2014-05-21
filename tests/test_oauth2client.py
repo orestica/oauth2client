@@ -272,6 +272,16 @@ class GoogleCredentialsTests(unittest.TestCase):
                        'private_key_id must be defined.',
                        str(error))
 
+  def test_get_default_credential_from_malformed_file_3(self):
+    credentials_file = datafile(
+        os.path.join('gcloud', 'credentials_default_malformed_3.json'))
+    try:
+      _get_default_credential_from_file(credentials_file)
+      self.fail('An exception was expected!')
+    except ValueError as error:
+      self.assertEqual('Expecting , delimiter: line 3 column 3 (char 32)',
+                       str(error))
+
   def test_raise_exception_for_missing_fields(self):
     missing_fields = ['first', 'second', 'third']
     try:
@@ -308,6 +318,22 @@ class GoogleCredentialsTests(unittest.TestCase):
         os.path.join('gcloud', 'credentials_default_authorized_user.json'))
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
     self.validate_oauth2_credentials(GoogleCredentials.get_default())
+
+  def test_get_default_from_environment_variable_malformed_file(self):
+    os.environ['SERVER_SOFTWARE'] = ''
+    environment_variable_file = datafile(
+        os.path.join('gcloud', 'credentials_default_malformed_3.json'))
+    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    try:
+      GoogleCredentials.get_default()
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('An error was encountered while reading json file: ' +
+                       environment_variable_file +
+                       ' (pointed to by GOOGLE_CREDENTIALS_DEFAULT environment '
+                       'variable): Expecting , delimiter: line 3 column 3 '
+                       '(char 32)',
+                       str(error))
 
   def test_get_default_environment_not_set_up(self):
     # It is normal for this test to fail if run inside

@@ -352,7 +352,7 @@ class GoogleCredentials(Credentials):
     if default_credential_file:
       try:
         return _get_default_credential_from_file(default_credential_file)
-      except DefaultCredentialsError as error:
+      except (DefaultCredentialsError, ValueError) as error:
         helping_message = (' (pointed to by GOOGLE_CREDENTIALS_DEFAULT'
                            ' environment variable)')
         _raise_exception_for_reading_json(default_credential_file,
@@ -361,7 +361,7 @@ class GoogleCredentials(Credentials):
     elif well_known_file:
       try:
         return _get_default_credential_from_file(well_known_file, False)
-      except DefaultCredentialsError as error:
+      except (DefaultCredentialsError, ValueError) as error:
         helping_message = (' (produced automatically when running'
                            ' "gcloud auth login" command)')
         _raise_exception_for_reading_json(well_known_file,
