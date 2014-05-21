@@ -279,8 +279,7 @@ class GoogleCredentialsTests(unittest.TestCase):
       _get_default_credential_from_file(credentials_file)
       self.fail('An exception was expected!')
     except ValueError as error:
-      self.assertEqual('Expecting , delimiter: line 3 column 3 (char 32)',
-                       str(error))
+      pass # expected
 
   def test_raise_exception_for_missing_fields(self):
     missing_fields = ['first', 'second', 'third']
@@ -328,12 +327,10 @@ class GoogleCredentialsTests(unittest.TestCase):
       GoogleCredentials.get_default()
       self.fail('An exception was expected!')
     except DefaultCredentialsError as error:
-      self.assertEqual('An error was encountered while reading json file: ' +
-                       environment_variable_file +
-                       ' (pointed to by GOOGLE_CREDENTIALS_DEFAULT environment '
-                       'variable): Expecting , delimiter: line 3 column 3 '
-                       '(char 32)',
-                       str(error))
+      self.assertTrue(str(error).startswith(
+          'An error was encountered while reading json file: ' +
+          environment_variable_file +
+          ' (pointed to by GOOGLE_CREDENTIALS_DEFAULT environment variable):'))
 
   def test_get_default_environment_not_set_up(self):
     # It is normal for this test to fail if run inside
