@@ -919,6 +919,7 @@ class GoogleCredentials(OAuth2Credentials):
     DefaultCredentialsError: raised when the credentials fail to be retrieved.
   """
 
+  @util.positional(7)
   def __init__(self,
                access_token,
                client_id,
