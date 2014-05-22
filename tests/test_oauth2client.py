@@ -162,25 +162,22 @@ class GoogleCredentialsTests(unittest.TestCase):
     self.assertEqual(GOOGLE_TOKEN_URI, credentials.token_uri)
     self.assertEqual('Python client library', credentials.user_agent)
 
+  def get_a_google_credentials_object(self):
+    return GoogleCredentials(None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None)
+
   def test_create_scoped_required(self):
-    self.assertFalse(GoogleCredentials(None,
-                                       None,
-                                       None,
-                                       None,
-                                       None,
-                                       None,
-                                       None,
-                                       None).create_scoped_required())
+    self.assertFalse(
+        self.get_a_google_credentials_object().create_scoped_required())
 
   def test_create_scoped(self):
-    credentials = GoogleCredentials(None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None) 
+    credentials = self.get_a_google_credentials_object() 
     self.assertEqual(credentials, credentials.create_scoped(None))
     self.assertEqual(credentials,
                      credentials.create_scoped(['dummy_scope']))
@@ -382,41 +379,22 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_from_stream_service_account(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default.json'))
-    credentials = GoogleCredentials(None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None).from_stream(credentials_file)
+    credentials = (
+        self.get_a_google_credentials_object().from_stream(credentials_file))
     self.validate_service_account_credentials(credentials)
 
   def test_from_stream_authorized_user(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_authorized_user.json'))
-    credentials = GoogleCredentials(None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None).from_stream(credentials_file)
+    credentials = (
+        self.get_a_google_credentials_object().from_stream(credentials_file))
     self.validate_google_credentials(credentials)
 
   def test_from_stream_malformed_file_1(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_1.json'))
     try:
-      GoogleCredentials(None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None).from_stream(credentials_file)
+      self.get_a_google_credentials_object().from_stream(credentials_file)
       self.fail('An exception was expected!')
     except DefaultCredentialsError as error:
       self.assertEqual("An error was encountered while reading json file: " +
@@ -430,14 +408,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_2.json'))
     try:
-      GoogleCredentials(None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None).from_stream(credentials_file)
+      self.get_a_google_credentials_object().from_stream(credentials_file)
       self.fail('An exception was expected!')
     except DefaultCredentialsError as error:
       self.assertEqual('An error was encountered while reading json file: ' +
@@ -451,14 +422,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_3.json'))
     try:
-      GoogleCredentials(None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None).from_stream(credentials_file)
+      self.get_a_google_credentials_object().from_stream(credentials_file)
       self.fail('An exception was expected!')
     except DefaultCredentialsError:
       pass # expected
