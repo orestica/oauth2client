@@ -928,6 +928,23 @@ class GoogleCredentials(OAuth2Credentials):
                token_uri,
                user_agent,
                revoke_uri=GOOGLE_REVOKE_URI):
+    """Create an instance of GoogleCredentials.
+
+    This constructor is not usually called by the user, instead
+    GoogleCredentials objects are instantiated by the
+    GoogleCredentials.from_stream() and GoogleCredentials.get_default().
+
+    Args:
+      access_token: string, access token.
+      client_id: string, client identifier.
+      client_secret: string, client secret.
+      refresh_token: string, refresh token.
+      token_expiry: datetime, when the access_token expires.
+      token_uri: string, URI of token endpoint.
+      user_agent: string, The HTTP User-Agent to provide for this application.
+      revoke_uri: string, URI for revoke endpoint.
+        Defaults to GOOGLE_REVOKE_URI; a token can't be revoked if this is None.
+    """
     super(GoogleCredentials, self).__init__(access_token,
                                             client_id,
                                             client_secret,
@@ -946,7 +963,7 @@ class GoogleCredentials(OAuth2Credentials):
     return False
   
   def create_scoped(self, scopes):
-    """Creates a Credentials object for the given scopes.
+    """Create a Credentials object for the given scopes.
     
     The Credentials type is preserved.
     """ 
@@ -1006,7 +1023,9 @@ class GoogleCredentials(OAuth2Credentials):
 
   @staticmethod
   def from_stream(credential_file):
-    """Get the credentials from a given file.
+    """Create a Credentials object by reading the information from a given file.
+    
+    It returns an object of type _ServiceAccountCredentials/GoogleCredentials.
     
     Args:
       credential_file: the path to the file from where the credentials
