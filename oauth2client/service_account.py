@@ -34,7 +34,7 @@ from pyasn1.codec.ber import decoder
 from pyasn1_modules.rfc5208 import PrivateKeyInfo
 
 
-class ServiceAccountCredentials(AssertionCredentials):
+class _ServiceAccountCredentials(AssertionCredentials):
   """Class representing a service account (signed JWT) credential."""
 
   MAX_TOKEN_LIFETIME_SECS = 3600 # 1 hour in seconds
@@ -50,7 +50,7 @@ class ServiceAccountCredentials(AssertionCredentials):
       revoke_uri=GOOGLE_REVOKE_URI,
       **kwargs):
 
-    super(ServiceAccountCredentials, self).__init__(
+    super(_ServiceAccountCredentials, self).__init__(
         None,
         user_agent=user_agent,
         token_uri=token_uri,
@@ -81,7 +81,7 @@ class ServiceAccountCredentials(AssertionCredentials):
         'aud': self._token_uri,
         'scope': self._scopes,
         'iat': now,
-        'exp': now + ServiceAccountCredentials.MAX_TOKEN_LIFETIME_SECS,
+        'exp': now + _ServiceAccountCredentials.MAX_TOKEN_LIFETIME_SECS,
         'iss': self._service_account_email
     }
     payload.update(self._kwargs)
@@ -107,15 +107,15 @@ class ServiceAccountCredentials(AssertionCredentials):
     return not bool(self._scopes)
 
   def create_scoped(self, scopes):
-    return ServiceAccountCredentials(self._service_account_id,
-                                     self._service_account_email,
-                                     self._private_key_id,
-                                     self._private_key_pkcs8_text,
-                                     scopes,
-                                     user_agent=self._user_agent,
-                                     token_uri=self._token_uri,
-                                     revoke_uri=self._revoke_uri,
-                                     **self._kwargs)
+    return _ServiceAccountCredentials(self._service_account_id,
+                                      self._service_account_email,
+                                      self._private_key_id,
+                                      self._private_key_pkcs8_text,
+                                      scopes,
+                                      user_agent=self._user_agent,
+                                      token_uri=self._token_uri,
+                                      revoke_uri=self._revoke_uri,
+                                      **self._kwargs)
 
 def _urlsafe_b64encode(data):
   return base64.urlsafe_b64encode(

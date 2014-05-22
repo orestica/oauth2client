@@ -29,7 +29,7 @@ import unittest
 
 from http_mock import HttpMockSequence
 from oauth2client.anyjson import simplejson
-from oauth2client.service_account import ServiceAccountCredentials
+from oauth2client.service_account import _ServiceAccountCredentials
 
 
 def datafile(filename):
@@ -46,11 +46,11 @@ class ServiceAccountCredentialsTests(unittest.TestCase):
     self.private_key_id = 'ABCDEF'
     self.private_key = datafile('pem_from_pkcs12.pem')
     self.scopes = ['dummy_scope']
-    self.credentials = ServiceAccountCredentials(self.service_account_id,
-                                                 self.service_account_email,
-                                                 self.private_key_id,
-                                                 self.private_key,
-                                                 [])
+    self.credentials = _ServiceAccountCredentials(self.service_account_id,
+                                                  self.service_account_email,
+                                                  self.private_key_id,
+                                                  self.private_key,
+                                                  [])
 
   def test_sign_blob(self):
     private_key_id, signature = self.credentials.sign_blob('Google')
@@ -81,17 +81,17 @@ class ServiceAccountCredentialsTests(unittest.TestCase):
     self.assertTrue(self.credentials.create_scoped_required())
 
   def test_create_scoped_required_with_scopes(self):
-    self.credentials = ServiceAccountCredentials(self.service_account_id,
-                                                 self.service_account_email,
-                                                 self.private_key_id,
-                                                 self.private_key,
-                                                 self.scopes)
+    self.credentials = _ServiceAccountCredentials(self.service_account_id,
+                                                  self.service_account_email,
+                                                  self.private_key_id,
+                                                  self.private_key,
+                                                  self.scopes)
     self.assertFalse(self.credentials.create_scoped_required())
 
   def test_create_scoped(self):
     new_credentials = self.credentials.create_scoped(self.scopes)
     self.assertNotEqual(self.credentials, new_credentials)
-    self.assertTrue(isinstance(new_credentials, ServiceAccountCredentials))
+    self.assertTrue(isinstance(new_credentials, _ServiceAccountCredentials))
     self.assertEqual('dummy_scope', new_credentials._scopes)
 
   def test_access_token(self):
