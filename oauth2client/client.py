@@ -997,7 +997,7 @@ class GoogleCredentials(OAuth2Credentials):
                                           error)
     elif well_known_file:
       try:
-        return _get_default_credential_from_file(well_known_file, False)
+        return _get_default_credential_from_file(well_known_file)
       except (DefaultCredentialsError, ValueError) as error:
         helping_message = (' (produced automatically when running'
                            ' "gcloud auth login" command)')
