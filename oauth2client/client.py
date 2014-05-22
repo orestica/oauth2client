@@ -887,12 +887,12 @@ class GoogleCredentials(OAuth2Credentials):
 
   <code>
   from googleapiclient.discovery import build
-  from oauth2client.client import Credentials
+  from oauth2client.client import GoogleCredentials
 
   PROJECT = 'bamboo-machine-422'  # replace this with one of your projects
   ZONE = 'us-central1-a'          # replace this with the zone you care about
 
-  service = build('compute', 'v1', credentials=Credentials.get_default())
+  service = build('compute', 'v1', credentials=GoogleCredentials.get_default())
 
   resource = service.instances()
   request = resource.list(project=PROJECT, zone=ZONE)
@@ -1025,7 +1025,7 @@ class GoogleCredentials(OAuth2Credentials):
   def from_stream(credential_file):
     """Create a Credentials object by reading the information from a given file.
     
-    It returns an object of type _ServiceAccountCredentials/GoogleCredentials.
+    It returns an object of type GoogleCredentials.
     
     Args:
       credential_file: the path to the file from where the credentials
