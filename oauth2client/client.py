@@ -919,7 +919,6 @@ class GoogleCredentials(OAuth2Credentials):
     DefaultCredentialsError: raised when the credentials fail to be retrieved.
   """
 
-  @util.positional(8)
   def __init__(self,
                access_token,
                client_id,
@@ -936,7 +935,7 @@ class GoogleCredentials(OAuth2Credentials):
                                             token_expiry,
                                             token_uri,
                                             user_agent,
-                                            revoke_uri)
+                                            revoke_uri=revoke_uri)
     
   def create_scoped_required(self):
     """Whether this Credentials object is scopeless.
