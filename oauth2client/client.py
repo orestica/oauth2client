@@ -876,7 +876,7 @@ class GoogleCredentials(OAuth2Credentials):
   
   The Default Credentials are being constructed as a function of the environment
   where the code is being run. More details can be found on this page:
-  https://developers.google.com/accounts/docs/default-credentials .
+  https://developers.google.com/accounts/docs/default-credentials
 
   Here is an example of how to use the Default Credentials for a service that
   requires authentication:

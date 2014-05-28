@@ -153,8 +153,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     if value is not None:
       os.environ[env] = value
     else:
-      if os.environ.get(env, None):
-        del os.environ[env]
+      os.environ.pop(env, '')
 
   def validate_service_account_credentials(self, credentials):
     self.assertTrue(isinstance(credentials, _ServiceAccountCredentials))
@@ -174,14 +173,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     self.assertEqual('Python client library', credentials.user_agent)
 
   def get_a_google_credentials_object(self):
-    return GoogleCredentials(None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None,
-                             None)
+    return GoogleCredentials(None, None, None, None, None, None, None, None)
 
   def test_create_scoped_required(self):
     self.assertFalse(

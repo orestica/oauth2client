@@ -20,8 +20,6 @@
 Unit tests for service account credentials implemented using RSA.
 """
 
-__author__ = 'orest@google.com (Orest Bolohan)'
-
 import os
 import rsa
 import time
@@ -33,6 +31,7 @@ from oauth2client.service_account import _ServiceAccountCredentials
 
 
 def datafile(filename):
+  # TODO(orestica): Refactor this using pkgutil.get_data
   f = open(os.path.join(os.path.dirname(__file__), 'data', filename), 'r')
   data = f.read()
   f.close()
