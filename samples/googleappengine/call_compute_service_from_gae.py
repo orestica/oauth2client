@@ -10,8 +10,7 @@ ZONE = "us-central1-a"          # Put here a zone which has some VMs
 
 def get_instances():
   service = build("compute", "v1", credentials=GoogleCredentials.get_default())
-  resource = service.instances()
-  request = resource.list(project=PROJECT, zone=ZONE)
+  request = service.instances().list(project=PROJECT, zone=ZONE)
   return request.execute()
 
 class MainPage(webapp2.RequestHandler):
@@ -19,6 +18,4 @@ class MainPage(webapp2.RequestHandler):
   def get(self):
     self.response.write(get_instances())
 
-app = webapp2.WSGIApplication([
-  ('/', MainPage),
-], debug=True)
+app = webapp2.WSGIApplication([('/', MainPage),], debug=True)

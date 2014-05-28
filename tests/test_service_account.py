@@ -73,9 +73,9 @@ class ServiceAccountCredentialsTests(unittest.TestCase):
     except rsa.pkcs1.VerificationError:
       pass  # Expected
 
-  def test_get_service_account_email(self):
+  def test_service_account_email(self):
     self.assertEqual(self.service_account_email,
-                     self.credentials.get_service_account_email())
+                     self.credentials.service_account_email)
 
   def test_create_scoped_required_without_scopes(self):
     self.assertTrue(self.credentials.create_scoped_required())

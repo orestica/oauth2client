@@ -119,6 +119,18 @@ class CredentialsTests(unittest.TestCase):
     restored = Credentials.new_from_json(json)
 
 
+class MockResponse(object):
+  def __init__(self, headers):
+    self._headers = headers
+
+  def info(self):
+    class Info:
+      def __init__(self, headers):
+        self.headers = headers
+
+    return Info(self._headers)
+
+
 class GoogleCredentialsTests(unittest.TestCase):
 
   def setUp(self):
@@ -183,7 +195,7 @@ class GoogleCredentialsTests(unittest.TestCase):
 
   def test_get_environment_gae_production(self):
     os.environ['SERVER_SOFTWARE'] = 'Google App Engine/XYZ'
-    self.assertEquals('GAE_PRODUCTION', _get_environment())
+    self.assertEqual('GAE_PRODUCTION', _get_environment())
 
   def test_get_environment_gae_local(self):
     os.environ['SERVER_SOFTWARE'] = 'Development/XYZ'
@@ -191,30 +203,34 @@ class GoogleCredentialsTests(unittest.TestCase):
 
   def test_get_environment_gce_production(self):
     os.environ['SERVER_SOFTWARE'] = ''
+    mockResponse = MockResponse(['Metadata-Flavor: Google\r\n'])
+
     m = mox.Mox()
 
-    http_request = m.CreateMock(object)
-    http_request.__call__(('http://metadata.google.internal'
-                          )).AndReturn(({'metadata-flavor':'Google'}, ''))
+    urllib2_urlopen = m.CreateMock(object)
+    urllib2_urlopen.__call__(('http://metadata.google.internal'
+                             )).AndReturn(mockResponse)
 
     m.ReplayAll()
 
-    self.assertEqual('GCE_PRODUCTION', _get_environment(http_request))
+    self.assertEqual('GCE_PRODUCTION', _get_environment(urllib2_urlopen))
 
     m.UnsetStubs()
     m.VerifyAll()
 
   def test_get_environment_unknown(self):
     os.environ['SERVER_SOFTWARE'] = ''
+    mockResponse = MockResponse([])
+
     m = mox.Mox()
 
-    http_request = m.CreateMock(object)
-    http_request.__call__(('http://metadata.google.internal'
-                          )).AndReturn(({}, ''))
+    urllib2_urlopen = m.CreateMock(object)
+    urllib2_urlopen.__call__(('http://metadata.google.internal'
+                             )).AndReturn(mockResponse)
 
     m.ReplayAll()
 
-    self.assertEqual('UNKNOWN', _get_environment(http_request))
+    self.assertEqual('UNKNOWN', _get_environment(urllib2_urlopen))
 
     m.UnsetStubs()
     m.VerifyAll()
@@ -306,15 +322,15 @@ class GoogleCredentialsTests(unittest.TestCase):
 
   def test_raise_exception_for_reading_json(self):
     credential_file = 'any_file'
-    helping_message = ' be good'
+    extra_help = ' be good'
     error = DefaultCredentialsError('stuff happens')
     try:
-      _raise_exception_for_reading_json(credential_file, helping_message, error)
+      _raise_exception_for_reading_json(credential_file, extra_help, error)
       self.fail('An exception was expected!')
     except DefaultCredentialsError as ex:
       self.assertEqual('An error was encountered while reading '
                        'json file: '+ credential_file +
-                       helping_message + ': ' + str(error),
+                       extra_help + ': ' + str(error),
                        str(ex))
 
   def test_get_default_from_environment_variable_service_account(self):

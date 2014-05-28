@@ -17,8 +17,6 @@
 This credentials class is implemented on top of rsa library.
 """
 
-__author__ = 'orest@google.com (Orest Bolohan)'
-
 import base64
 import rsa
 import time
@@ -39,27 +37,17 @@ class _ServiceAccountCredentials(AssertionCredentials):
 
   MAX_TOKEN_LIFETIME_SECS = 3600 # 1 hour in seconds
 
-  def __init__(self,
-      service_account_id,
-      service_account_email,
-      private_key_id,
-      private_key_pkcs8_text,
-      scopes,
-      user_agent=None,
-      token_uri=GOOGLE_TOKEN_URI,
-      revoke_uri=GOOGLE_REVOKE_URI,
-      **kwargs):
+  def __init__(self, service_account_id, service_account_email, private_key_id,
+      private_key_pkcs8_text, scopes, user_agent=None,
+      token_uri=GOOGLE_TOKEN_URI, revoke_uri=GOOGLE_REVOKE_URI, **kwargs):
 
     super(_ServiceAccountCredentials, self).__init__(
-        None,
-        user_agent=user_agent,
-        token_uri=token_uri,
-        revoke_uri=revoke_uri)
+        None, user_agent=user_agent, token_uri=token_uri, revoke_uri=revoke_uri)
     
     self._service_account_id = service_account_id
     self._service_account_email = service_account_email
     self._private_key_id = private_key_id
-    self._private_key = _get_pk(private_key_pkcs8_text)
+    self._private_key = _get_private_key(private_key_pkcs8_text)
     self._private_key_pkcs8_text = private_key_pkcs8_text
     self._scopes = util.scopes_to_string(scopes)
     self._user_agent = user_agent
@@ -73,7 +61,7 @@ class _ServiceAccountCredentials(AssertionCredentials):
     header = {
         'alg': 'RS256',
         'typ': 'JWT',
-        'keyid': self._private_key_id
+        'kid': self._private_key_id
     }
 
     now = long(time.time())
@@ -100,7 +88,8 @@ class _ServiceAccountCredentials(AssertionCredentials):
     return (self._private_key_id,
             rsa.pkcs1.sign(blob, self._private_key, 'SHA-256'))
 
-  def get_service_account_email(self):
+  @property
+  def service_account_email(self):
     return self._service_account_email
 
   def create_scoped_required(self):
@@ -122,7 +111,7 @@ def _urlsafe_b64encode(data):
       simplejson.dumps(data, separators = (',', ':'))\
           .encode('UTF-8')).rstrip('=')
 
-def _get_pk(private_key_pkcs8_text):
+def _get_private_key(private_key_pkcs8_text):
   """Get an RSA private key object from a pkcs8 representation."""
 
   der = rsa.pem.load_pem(private_key_pkcs8_text, 'PRIVATE KEY')
