@@ -104,7 +104,7 @@ class _ServiceAccountCredentials(AssertionCredentials):
     return self._service_account_email
 
   def create_scoped_required(self):
-    return not bool(self._scopes)
+    return not self._scopes
 
   def create_scoped(self, scopes):
     return _ServiceAccountCredentials(self._service_account_id,

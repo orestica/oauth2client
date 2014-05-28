@@ -100,7 +100,7 @@ class NonAsciiHeaderError(Error):
 
 
 class DefaultCredentialsError(Error):
-  """Error retrieving the default credentials."""
+  """Error retrieving the Default Credentials."""
 
 
 def _abstract():
@@ -838,17 +838,15 @@ class AccessTokenCredentials(OAuth2Credentials):
     self._do_revoke(http_request, self.access_token)
 
 
-_computed_env_name = False
 _env_name = None
 
 
 def _get_environment(http_request=None):
   """Detect the environment the code is being run on."""
 
-  global _computed_env_name
   global _env_name
   
-  if _computed_env_name:
+  if _env_name:
     return _env_name
 
   server_software = os.environ.get('SERVER_SOFTWARE', '')
@@ -870,19 +868,18 @@ def _get_environment(http_request=None):
     except httplib2.ServerNotFoundError:
       _env_name = 'UNKNOWN'
 
-  _computed_env_name = True
   return _env_name
 
 
 class GoogleCredentials(OAuth2Credentials):
-  """Provides default credentials to be used in authenticating
+  """Provides Default Credentials to be used in authenticating
   Google APIs calls.
   
-  The default credentials are being constructed as a function of the environment
+  The Default Credentials are being constructed as a function of the environment
   where the code is being run. More details can be found on this page:
   https://developers.google.com/accounts/docs/default-credentials .
 
-  Here is an example of how to use the default credentials for a service that
+  Here is an example of how to use the Default Credentials for a service that
   requires authentication:
 
   <code>
@@ -971,7 +968,7 @@ class GoogleCredentials(OAuth2Credentials):
 
   @staticmethod
   def get_default():
-    """Get the default credentials appropriate for the environment in which the
+    """Get the Default Credentials appropriate for the environment in which the
     code is being run.
     """
 
@@ -1088,7 +1085,7 @@ def _get_well_known_file():
 
 
 def _get_default_credential_from_file(default_credential_file):
-  """Build the default credentials from file."""
+  """Build the Default Credentials from file."""
 
   import service_account
 

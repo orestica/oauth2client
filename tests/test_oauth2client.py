@@ -52,7 +52,6 @@ from oauth2client.client import REFRESH_STATUS_CODES
 from oauth2client.client import Storage
 from oauth2client.client import TokenRevokeError
 from oauth2client.client import VerifyJwtTokenError
-from oauth2client.client import _computed_env_name
 from oauth2client.client import _env_name
 from oauth2client.client import _extract_id_token
 from oauth2client.client import _get_default_credential_from_file
@@ -129,7 +128,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     self.env_appdata = os.environ.get('APPDATA', None)
     self.os_name = os.name
     from oauth2client import client
-    setattr(client, '_computed_env_name', False)
+    setattr(client, '_env_name', None)
 
   def tearDown(self):
     self.reset_env('SERVER_SOFTWARE', self.env_server_software)
@@ -325,12 +324,10 @@ class GoogleCredentialsTests(unittest.TestCase):
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
     self.validate_service_account_credentials(GoogleCredentials.get_default())
 
-  def test_computed_env_name(self):
+  def test_env_name(self):
     from oauth2client import client
-    self.assertFalse(getattr(client, '_computed_env_name'))
     self.assertEqual(None, getattr(client, '_env_name'))
     self.test_get_default_from_environment_variable_service_account()
-    self.assertTrue(getattr(client, '_computed_env_name'))
     self.assertEqual('UNKNOWN', getattr(client, '_env_name'))    
 
   def test_get_default_from_environment_variable_authorized_user(self):

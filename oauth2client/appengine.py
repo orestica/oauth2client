@@ -198,11 +198,10 @@ class AppAssertionCredentials(AssertionCredentials):
     self.access_token = token
 
   def create_scoped_required(self):
-    return not bool(self.scope)
+    return not self.scope
 
   def create_scoped(self, scopes):
-    return AppAssertionCredentials(scopes,
-                                   **self.kwargs)
+    return AppAssertionCredentials(scopes, **self.kwargs)
 
 
 class FlowProperty(db.Property):

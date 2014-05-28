@@ -94,7 +94,7 @@ class AppAssertionCredentials(AssertionCredentials):
       raise AccessTokenRefreshError(content)
 
   def create_scoped_required(self):
-    return not bool(self.scope)
+    return not self.scope
 
   def create_scoped(self, scopes):
     return AppAssertionCredentials(scopes,
