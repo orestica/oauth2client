@@ -44,6 +44,7 @@ from oauth2client.client import Credentials
 from oauth2client.client import DefaultCredentialsError
 from oauth2client.client import FlowExchangeError
 from oauth2client.client import GoogleCredentials
+from oauth2client.client import GOOGLE_CREDENTIALS_DEFAULT
 from oauth2client.client import MemoryCache
 from oauth2client.client import NonAsciiHeaderError
 from oauth2client.client import OAuth2Credentials
@@ -140,7 +141,7 @@ class GoogleCredentialsTests(unittest.TestCase):
   def setUp(self):
     self.env_server_software = os.environ.get('SERVER_SOFTWARE', None)
     self.env_google_credentials_default = (
-        os.environ.get('GOOGLE_CREDENTIALS_DEFAULT', None))
+        os.environ.get(GOOGLE_CREDENTIALS_DEFAULT, None))
     self.env_appdata = os.environ.get('APPDATA', None)
     self.os_name = os.name
     from oauth2client import client
@@ -148,7 +149,7 @@ class GoogleCredentialsTests(unittest.TestCase):
 
   def tearDown(self):
     self.reset_env('SERVER_SOFTWARE', self.env_server_software)
-    self.reset_env('GOOGLE_CREDENTIALS_DEFAULT',
+    self.reset_env(GOOGLE_CREDENTIALS_DEFAULT,
                    self.env_google_credentials_default)
     self.reset_env('APPDATA', self.env_appdata)
     os.name = self.os_name
@@ -235,21 +236,21 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_get_environment_variable_file(self):
     environment_variable_file = datafile(
         os.path.join('gcloud', 'credentials_default.json'))
-    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    os.environ[GOOGLE_CREDENTIALS_DEFAULT] = environment_variable_file
     self.assertEqual(environment_variable_file,
                      _get_environment_variable_file())
 
   def test_get_environment_variable_file_error(self):
     nonexistent_file = datafile('nonexistent')
-    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = nonexistent_file
+    os.environ[GOOGLE_CREDENTIALS_DEFAULT] = nonexistent_file
     # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
     try:
       _get_environment_variable_file()
       self.fail(nonexistent_file + ' should not exist.')
     except DefaultCredentialsError as error:
       self.assertEqual('File ' + nonexistent_file +
-                       ' (pointed by GOOGLE_CREDENTIALS_DEFAULT environment'
-                       ' variable) does not exist!',
+                       ' (pointed by ' + GOOGLE_CREDENTIALS_DEFAULT +
+                       ' environment variable) does not exist!',
                        str(error))
 
   def test_get_well_known_file_on_windows(self):
@@ -336,7 +337,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     os.environ['SERVER_SOFTWARE'] = ''
     environment_variable_file = datafile(
         os.path.join('gcloud', 'credentials_default.json'))
-    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    os.environ[GOOGLE_CREDENTIALS_DEFAULT] = environment_variable_file
     self.validate_service_account_credentials(GoogleCredentials.get_default())
 
   def test_env_name(self):
@@ -349,14 +350,14 @@ class GoogleCredentialsTests(unittest.TestCase):
     os.environ['SERVER_SOFTWARE'] = ''
     environment_variable_file = datafile(
         os.path.join('gcloud', 'credentials_default_authorized_user.json'))
-    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    os.environ[GOOGLE_CREDENTIALS_DEFAULT] = environment_variable_file
     self.validate_google_credentials(GoogleCredentials.get_default())
 
   def test_get_default_from_environment_variable_malformed_file(self):
     os.environ['SERVER_SOFTWARE'] = ''
     environment_variable_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_3.json'))
-    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
+    os.environ[GOOGLE_CREDENTIALS_DEFAULT] = environment_variable_file
     # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
     try:
       GoogleCredentials.get_default()
@@ -364,15 +365,15 @@ class GoogleCredentialsTests(unittest.TestCase):
     except DefaultCredentialsError as error:
       self.assertTrue(str(error).startswith(
           'An error was encountered while reading json file: ' +
-          environment_variable_file +
-          ' (pointed to by GOOGLE_CREDENTIALS_DEFAULT environment variable):'))
+          environment_variable_file + ' (pointed to by ' +
+          GOOGLE_CREDENTIALS_DEFAULT + ' environment variable):'))
 
   def test_get_default_environment_not_set_up(self):
     # It is normal for this test to fail if run inside
     # a Google Compute Engine VM or after 'gcloud auth login' command
     # has been executed on a non Windows machine.
     os.environ['SERVER_SOFTWARE'] = ''
-    os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = ''
+    os.environ[GOOGLE_CREDENTIALS_DEFAULT] = ''
     os.environ['APPDATA'] = ''
     # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
     try:
@@ -383,9 +384,9 @@ class GoogleCredentialsTests(unittest.TestCase):
                        "available if running in Google App Engine or Google "
                        "Compute Engine. They are also available if using the "
                        "Google Cloud SDK and running 'gcloud auth login'. "
-                       "Otherwise, the environment variable "
-                       "GOOGLE_CREDENTIALS_DEFAULT must be defined pointing to "
-                       "a file defining the credentials. See "
+                       "Otherwise, the environment variable " +
+                       GOOGLE_CREDENTIALS_DEFAULT + " must be defined pointing "
+                       "to a file defining the credentials. See "
                        "https://developers.google.com/accounts/docs/default-"
                        "credentials for details.",
                         str(error))

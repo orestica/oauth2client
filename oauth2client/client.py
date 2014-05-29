@@ -72,6 +72,9 @@ AUTHORIZED_USER = 'authorized_user'
 # The value representing service account credentials.
 SERVICE_ACCOUNT = 'service_account'
 
+# The environment variable pointing the file with local Default Credentials.
+GOOGLE_CREDENTIALS_DEFAULT = 'GOOGLE_CREDENTIALS_DEFAULT'
+
 class Error(Exception):
   """Base error for this module."""
 
@@ -977,7 +980,7 @@ class GoogleCredentials(OAuth2Credentials):
       try:
         return _get_default_credential_from_file(default_credential_filename)
       except (DefaultCredentialsError, ValueError) as error:
-        extra_help = (' (pointed to by GOOGLE_CREDENTIALS_DEFAULT'
+        extra_help = (' (pointed to by ' + GOOGLE_CREDENTIALS_DEFAULT +
                       ' environment variable)')
         _raise_exception_for_reading_json(default_credential_filename,
                                           extra_help, error)
@@ -997,8 +1000,8 @@ class GoogleCredentials(OAuth2Credentials):
           "The Default Credentials are not available. They are available if "
           "running in Google App Engine or Google Compute Engine. They are "
           "also available if using the Google Cloud SDK and running 'gcloud "
-          "auth login'. Otherwise, the environment variable "
-          "GOOGLE_CREDENTIALS_DEFAULT must be defined pointing to a file "
+          "auth login'. Otherwise, the environment variable " +
+          GOOGLE_CREDENTIALS_DEFAULT + " must be defined pointing to a file "
           "defining the credentials. "
           "See https://developers.google.com/accounts/docs/default-credentials "
           "for details.")
@@ -1031,16 +1034,16 @@ class GoogleCredentials(OAuth2Credentials):
 
 
 def _get_environment_variable_file():
-  default_credential_filename = os.environ.get('GOOGLE_CREDENTIALS_DEFAULT',
+  default_credential_filename = os.environ.get(GOOGLE_CREDENTIALS_DEFAULT,
                                                None)
 
   if default_credential_filename:
     if os.path.isfile(default_credential_filename):
       return default_credential_filename
     else:
-      raise DefaultCredentialsError('File ' + default_credential_filename +
-                                    ' (pointed by GOOGLE_CREDENTIALS_DEFAULT'
-                                    ' environment variable) does not exist!')
+      raise DefaultCredentialsError(
+          'File ' + default_credential_filename + ' (pointed by ' +
+          GOOGLE_CREDENTIALS_DEFAULT + ' environment variable) does not exist!')
 
 
 def _get_well_known_file():
