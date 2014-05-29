@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-"""Oauth2client tests
+"""Oauth2client tests.
 
 Unit tests for service account credentials implemented using RSA.
 """

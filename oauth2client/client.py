@@ -66,6 +66,11 @@ OOB_CALLBACK_URN = 'urn:ietf:wg:oauth:2.0:oob'
 # Google Data client libraries may need to set this to [401, 403].
 REFRESH_STATUS_CODES = [401]
 
+# The value representing user credentials.
+AUTHORIZED_USER = 'authorized_user'
+
+# The value representing service account credentials.
+SERVICE_ACCOUNT = 'service_account'
 
 class Error(Exception):
   """Base error for this module."""
@@ -379,7 +384,7 @@ def _update_query_params(uri, params):
     The same URI but with the new query parameters added.
   """
   parts = list(urlparse.urlparse(uri))
-  query_params = dict(parse_qsl(parts[4])) # 4 is the index of the query part
+  query_params = dict(parse_qsl(parts[4]))  # 4 is the index of the query part
   query_params.update(params)
   parts[4] = urllib.urlencode(query_params)
   return urlparse.urlunparse(parts)
@@ -860,7 +865,7 @@ def _get_environment(urllib2_urlopen=None):
       if urllib2_urlopen is None:
         urllib2_urlopen = urllib2.urlopen
       response = urllib2_urlopen('http://metadata.google.internal')
-      if 'Metadata-Flavor: Google\r\n' in response.info().headers:
+      if any('Metadata-Flavor: Google' in h for h in response.info().headers):
         _env_name = 'GCE_PRODUCTION'
       else:
         _env_name = 'UNKNOWN'
@@ -871,8 +876,7 @@ def _get_environment(urllib2_urlopen=None):
 
 
 class GoogleCredentials(OAuth2Credentials):
-  """Provides Default Credentials to be used in authenticating
-  Google APIs calls.
+  """Default credentials for use in calling Google APIs.
   
   The Default Credentials are being constructed as a function of the environment
   where the code is being run. More details can be found on this page:
@@ -952,8 +956,7 @@ class GoogleCredentials(OAuth2Credentials):
 
   @staticmethod
   def get_default():
-    """Get the Default Credentials appropriate for the environment in which the
-    code is being run.
+    """Get the Default Credentials for the current environment.
 
     Exceptions:
       DefaultCredentialsError: raised when the credentials fail to be retrieved.
@@ -1042,6 +1045,8 @@ def _get_environment_variable_file():
 
 def _get_well_known_file():
   """Get the well known file produced by command 'gcloud auth login'."""
+  # TODO(orestica): Revisit this method once gcloud provides a better way
+  # of pinpointing the exact location of the file.
 
   WELL_KNOWN_CREDENTIALS_FILE = 'credentials_default.json'
   CLOUDSDK_CONFIG_DIRECTORY = 'gcloud'
@@ -1075,24 +1080,23 @@ def _get_default_credential_from_file(default_credential_filename):
   with open(default_credential_filename) as default_credential:
     client_credentials = service_account.simplejson.load(default_credential)
 
-  if (client_credentials.get('type') not in ('authorized_user',
-                                             'service_account')):
-    raise DefaultCredentialsError("'type' field should be defined "
-                                  "(and have one of the 'authorized_user' "
-                                  "or 'service_account' values)")
-
-  if client_credentials['type'] == 'authorized_user':
+  credentials_type = client_credentials.get('type')
+  if credentials_type == AUTHORIZED_USER:
     required_fields = set(['client_id', 'client_secret', 'refresh_token'])
-  else: # client_credentials['type'] == 'service_account'
+  elif credentials_type == SERVICE_ACCOUNT:
     required_fields = set(['client_id', 'client_email', 'private_key_id',
                            'private_key'])
+  else:
+    raise DefaultCredentialsError("'type' field should be defined "
+                                  "(and have one of the '" + AUTHORIZED_USER +
+                                  "' or '" + SERVICE_ACCOUNT + "' values)")
 
   missing_fields = required_fields.difference(client_credentials.keys())
   
   if missing_fields:
     _raise_exception_for_missing_fields(missing_fields)
 
-  if client_credentials['type'] == 'authorized_user':
+  if client_credentials['type'] == AUTHORIZED_USER:
     return GoogleCredentials(
         access_token=None,
         client_id=client_credentials['client_id'],
@@ -1101,7 +1105,7 @@ def _get_default_credential_from_file(default_credential_filename):
         token_expiry=None,
         token_uri=GOOGLE_TOKEN_URI,
         user_agent='Python client library')
-  else: # client_credentials['type'] == 'service_account'
+  else:  # client_credentials['type'] == SERVICE_ACCOUNT
     return service_account._ServiceAccountCredentials(
         service_account_id=client_credentials['client_id'],
         service_account_email=client_credentials['client_email'],
@@ -1214,7 +1218,7 @@ if HAS_CRYPTO:
     later. For App Engine you may also consider using AppAssertionCredentials.
     """
 
-    MAX_TOKEN_LIFETIME_SECS = 3600 # 1 hour in seconds
+    MAX_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 
     @util.positional(4)
     def __init__(self,

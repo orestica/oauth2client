@@ -39,6 +39,7 @@ from oauth2client.client import AccessTokenCredentials
 from oauth2client.client import AccessTokenCredentialsError
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import AssertionCredentials
+from oauth2client.client import AUTHORIZED_USER
 from oauth2client.client import Credentials
 from oauth2client.client import DefaultCredentialsError
 from oauth2client.client import FlowExchangeError
@@ -49,6 +50,7 @@ from oauth2client.client import OAuth2Credentials
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import OOB_CALLBACK_URN
 from oauth2client.client import REFRESH_STATUS_CODES
+from oauth2client.client import SERVICE_ACCOUNT
 from oauth2client.client import Storage
 from oauth2client.client import TokenRevokeError
 from oauth2client.client import VerifyJwtTokenError
@@ -120,6 +122,8 @@ class CredentialsTests(unittest.TestCase):
 
 
 class MockResponse(object):
+  """Mock the response of urllib2.urlopen() call."""
+  
   def __init__(self, headers):
     self._headers = headers
 
@@ -150,6 +154,7 @@ class GoogleCredentialsTests(unittest.TestCase):
     os.name = self.os_name
 
   def reset_env(self, env, value):
+    """Set the environment variable 'env' to 'value'."""
     if value is not None:
       os.environ[env] = value
     else:
@@ -237,14 +242,11 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_get_environment_variable_file_error(self):
     nonexistent_file = datafile('nonexistent')
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = nonexistent_file
-    try:
-      _get_environment_variable_file()
-      self.fail(nonexistent_file + ' should not exist.')
-    except DefaultCredentialsError as error:
-      self.assertEqual('File ' + nonexistent_file +
-                       ' (pointed by GOOGLE_CREDENTIALS_DEFAULT environment'
-                       ' variable) does not exist!',
-                       str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        '^File ' + nonexistent_file + ' \(pointed by GOOGLE_CREDENTIALS_DEFAULT'
+        ' environment variable\) does not exist!$',
+        _get_environment_variable_file)
 
   def test_get_well_known_file_on_windows(self):
     well_known_file = datafile(
@@ -273,57 +275,43 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_get_default_credential_from_malformed_file_1(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_1.json'))
-    try:
-      _get_default_credential_from_file(credentials_file)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertEqual("'type' field should be defined "
-                       "(and have one of the 'authorized_user' "
-                       "or 'service_account' values)",
-                       str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        "^'type' field should be defined \(and have one of the '" +
+        AUTHORIZED_USER + "' or '" + SERVICE_ACCOUNT + "' values\)$",
+        _get_default_credential_from_file, credentials_file)
 
   def test_get_default_credential_from_malformed_file_2(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_2.json'))
-    try:
-      _get_default_credential_from_file(credentials_file)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertEqual('The following field(s): '
-                       'private_key_id must be defined.',
-                       str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        '^The following field\(s\): private_key_id must be defined\.$',
+        _get_default_credential_from_file, credentials_file)
 
   def test_get_default_credential_from_malformed_file_3(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_3.json'))
-    try:
-      _get_default_credential_from_file(credentials_file)
-      self.fail('An exception was expected!')
-    except ValueError:
-      pass # expected
+    self.assertRaises(ValueError, _get_default_credential_from_file,
+                      credentials_file)
 
   def test_raise_exception_for_missing_fields(self):
     missing_fields = ['first', 'second', 'third']
-    try:
-      _raise_exception_for_missing_fields(missing_fields)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertEqual('The following field(s): ' +
-                       ', '.join(missing_fields) + ' must be defined.',
-                       str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        '^The following field\(s\): ' + ', '.join(missing_fields) +
+        ' must be defined\.$',
+        _raise_exception_for_missing_fields, missing_fields)
 
   def test_raise_exception_for_reading_json(self):
     credential_file = 'any_file'
     extra_help = ' be good'
     error = DefaultCredentialsError('stuff happens')
-    try:
-      _raise_exception_for_reading_json(credential_file, extra_help, error)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as ex:
-      self.assertEqual('An error was encountered while reading '
-                       'json file: '+ credential_file +
-                       extra_help + ': ' + str(error),
-                       str(ex))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        '^An error was encountered while reading json file: '+ credential_file +
+        extra_help + ': ' + str(error) + "$",
+        _raise_exception_for_reading_json, credential_file, extra_help, error)
 
   def test_get_default_from_environment_variable_service_account(self):
     os.environ['SERVER_SOFTWARE'] = ''
@@ -350,14 +338,12 @@ class GoogleCredentialsTests(unittest.TestCase):
     environment_variable_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_3.json'))
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
-    try:
-      GoogleCredentials.get_default()
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertTrue(str(error).startswith(
-          'An error was encountered while reading json file: ' +
-          environment_variable_file +
-          ' (pointed to by GOOGLE_CREDENTIALS_DEFAULT environment variable):'))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        '^An error was encountered while reading json file: ' +
+        environment_variable_file +
+        ' \(pointed to by GOOGLE_CREDENTIALS_DEFAULT environment variable\):',
+        GoogleCredentials.get_default)
 
   def test_get_default_environment_not_set_up(self):
     # It is normal for this test to fail if run inside
@@ -366,20 +352,16 @@ class GoogleCredentialsTests(unittest.TestCase):
     os.environ['SERVER_SOFTWARE'] = ''
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = ''
     os.environ['APPDATA'] = ''
-    try:
-      GoogleCredentials.get_default()
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertEqual("The Default Credentials are not available. They are "
-                       "available if running in Google App Engine or Google "
-                       "Compute Engine. They are also available if using the "
-                       "Google Cloud SDK and running 'gcloud auth login'. "
-                       "Otherwise, the environment variable "
-                       "GOOGLE_CREDENTIALS_DEFAULT must be defined pointing to "
-                       "a file defining the credentials. See "
-                       "https://developers.google.com/accounts/docs/default-"
-                       "credentials for details.",
-                        str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        "^The Default Credentials are not available\. They are available if "
+        "running in Google App Engine or Google Compute Engine\. They are also "
+        "available if using the Google Cloud SDK and running 'gcloud auth "
+        "login'\. Otherwise, the environment variable "
+        "GOOGLE_CREDENTIALS_DEFAULT must be defined pointing to a file "
+        "defining the credentials\. See https://developers.google.com/accounts/"
+        "docs/default-credentials for details\.$",
+        GoogleCredentials.get_default)
 
   def test_from_stream_service_account(self):
     credentials_file = datafile(
@@ -398,39 +380,30 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_from_stream_malformed_file_1(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_1.json'))
-    try:
-      self.get_a_google_credentials_object().from_stream(credentials_file)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertEqual("An error was encountered while reading json file: " +
-                       credentials_file +
-                       " (provided as parameter to the from_stream() method): "
-                       "'type' field should be defined (and have one of the "
-                       "'authorized_user' or 'service_account' values)",
-                       str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        "^An error was encountered while reading json file: " +
+        credentials_file + " \(provided as parameter to the from_stream\(\) " +
+        "method\): 'type' field should be defined \(and have one of the '" +
+        AUTHORIZED_USER + "' or '" + SERVICE_ACCOUNT + "' values\)$",
+        self.get_a_google_credentials_object().from_stream, credentials_file)
 
   def test_from_stream_malformed_file_2(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_2.json'))
-    try:
-      self.get_a_google_credentials_object().from_stream(credentials_file)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError as error:
-      self.assertEqual('An error was encountered while reading json file: ' +
-                       credentials_file +
-                       ' (provided as parameter to the from_stream() method): '
-                       'The following field(s): private_key_id must be '
-                       'defined.',
-                       str(error))
+    self.assertRaisesRegexp(
+        DefaultCredentialsError,
+        '^An error was encountered while reading json file: ' +
+        credentials_file + ' \(provided as parameter to the from_stream\(\) '
+        'method\): The following field\(s\): private_key_id must be defined\.$',
+        self.get_a_google_credentials_object().from_stream, credentials_file)
 
   def test_from_stream_malformed_file_3(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_3.json'))
-    try:
-      self.get_a_google_credentials_object().from_stream(credentials_file)
-      self.fail('An exception was expected!')
-    except DefaultCredentialsError:
-      pass # expected
+    self.assertRaises(
+        DefaultCredentialsError,
+        self.get_a_google_credentials_object().from_stream, credentials_file)
 
 
 class DummyDeleteStorage(Storage):
