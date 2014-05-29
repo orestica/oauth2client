@@ -242,11 +242,15 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_get_environment_variable_file_error(self):
     nonexistent_file = datafile('nonexistent')
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = nonexistent_file
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        '^File ' + nonexistent_file + ' \(pointed by GOOGLE_CREDENTIALS_DEFAULT'
-        ' environment variable\) does not exist!$',
-        _get_environment_variable_file)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      _get_environment_variable_file()
+      self.fail(nonexistent_file + ' should not exist.')
+    except DefaultCredentialsError as error:
+      self.assertEqual('File ' + nonexistent_file +
+                       ' (pointed by GOOGLE_CREDENTIALS_DEFAULT environment'
+                       ' variable) does not exist!',
+                       str(error))
 
   def test_get_well_known_file_on_windows(self):
     well_known_file = datafile(
@@ -275,19 +279,27 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_get_default_credential_from_malformed_file_1(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_1.json'))
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        "^'type' field should be defined \(and have one of the '" +
-        AUTHORIZED_USER + "' or '" + SERVICE_ACCOUNT + "' values\)$",
-        _get_default_credential_from_file, credentials_file)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      _get_default_credential_from_file(credentials_file)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual("'type' field should be defined "
+                       "(and have one of the '" + AUTHORIZED_USER +
+                       "' or '" + SERVICE_ACCOUNT + "' values)",
+                       str(error))
 
   def test_get_default_credential_from_malformed_file_2(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_2.json'))
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        '^The following field\(s\): private_key_id must be defined\.$',
-        _get_default_credential_from_file, credentials_file)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      _get_default_credential_from_file(credentials_file)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('The following field(s): '
+                       'private_key_id must be defined.',
+                       str(error))
 
   def test_get_default_credential_from_malformed_file_3(self):
     credentials_file = datafile(
@@ -297,21 +309,28 @@ class GoogleCredentialsTests(unittest.TestCase):
 
   def test_raise_exception_for_missing_fields(self):
     missing_fields = ['first', 'second', 'third']
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        '^The following field\(s\): ' + ', '.join(missing_fields) +
-        ' must be defined\.$',
-        _raise_exception_for_missing_fields, missing_fields)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      _raise_exception_for_missing_fields(missing_fields)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('The following field(s): ' +
+                       ', '.join(missing_fields) + ' must be defined.',
+                       str(error))
 
   def test_raise_exception_for_reading_json(self):
     credential_file = 'any_file'
     extra_help = ' be good'
     error = DefaultCredentialsError('stuff happens')
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        '^An error was encountered while reading json file: '+ credential_file +
-        extra_help + ': ' + str(error) + "$",
-        _raise_exception_for_reading_json, credential_file, extra_help, error)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      _raise_exception_for_reading_json(credential_file, extra_help, error)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as ex:
+      self.assertEqual('An error was encountered while reading '
+                       'json file: '+ credential_file +
+                       extra_help + ': ' + str(error),
+                       str(ex))
 
   def test_get_default_from_environment_variable_service_account(self):
     os.environ['SERVER_SOFTWARE'] = ''
@@ -338,12 +357,15 @@ class GoogleCredentialsTests(unittest.TestCase):
     environment_variable_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_3.json'))
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = environment_variable_file
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        '^An error was encountered while reading json file: ' +
-        environment_variable_file +
-        ' \(pointed to by GOOGLE_CREDENTIALS_DEFAULT environment variable\):',
-        GoogleCredentials.get_default)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      GoogleCredentials.get_default()
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertTrue(str(error).startswith(
+          'An error was encountered while reading json file: ' +
+          environment_variable_file +
+          ' (pointed to by GOOGLE_CREDENTIALS_DEFAULT environment variable):'))
 
   def test_get_default_environment_not_set_up(self):
     # It is normal for this test to fail if run inside
@@ -352,16 +374,21 @@ class GoogleCredentialsTests(unittest.TestCase):
     os.environ['SERVER_SOFTWARE'] = ''
     os.environ['GOOGLE_CREDENTIALS_DEFAULT'] = ''
     os.environ['APPDATA'] = ''
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        "^The Default Credentials are not available\. They are available if "
-        "running in Google App Engine or Google Compute Engine\. They are also "
-        "available if using the Google Cloud SDK and running 'gcloud auth "
-        "login'\. Otherwise, the environment variable "
-        "GOOGLE_CREDENTIALS_DEFAULT must be defined pointing to a file "
-        "defining the credentials\. See https://developers.google.com/accounts/"
-        "docs/default-credentials for details\.$",
-        GoogleCredentials.get_default)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      GoogleCredentials.get_default()
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual("The Default Credentials are not available. They are "
+                       "available if running in Google App Engine or Google "
+                       "Compute Engine. They are also available if using the "
+                       "Google Cloud SDK and running 'gcloud auth login'. "
+                       "Otherwise, the environment variable "
+                       "GOOGLE_CREDENTIALS_DEFAULT must be defined pointing to "
+                       "a file defining the credentials. See "
+                       "https://developers.google.com/accounts/docs/default-"
+                       "credentials for details.",
+                        str(error))
 
   def test_from_stream_service_account(self):
     credentials_file = datafile(
@@ -380,23 +407,33 @@ class GoogleCredentialsTests(unittest.TestCase):
   def test_from_stream_malformed_file_1(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_1.json'))
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        "^An error was encountered while reading json file: " +
-        credentials_file + " \(provided as parameter to the from_stream\(\) " +
-        "method\): 'type' field should be defined \(and have one of the '" +
-        AUTHORIZED_USER + "' or '" + SERVICE_ACCOUNT + "' values\)$",
-        self.get_a_google_credentials_object().from_stream, credentials_file)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      self.get_a_google_credentials_object().from_stream(credentials_file)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual("An error was encountered while reading json file: " +
+                       credentials_file +
+                       " (provided as parameter to the from_stream() method): "
+                       "'type' field should be defined (and have one of the '" +
+                       AUTHORIZED_USER + "' or '" + SERVICE_ACCOUNT +
+                       "' values)",
+                       str(error))
 
   def test_from_stream_malformed_file_2(self):
     credentials_file = datafile(
         os.path.join('gcloud', 'credentials_default_malformed_2.json'))
-    self.assertRaisesRegexp(
-        DefaultCredentialsError,
-        '^An error was encountered while reading json file: ' +
-        credentials_file + ' \(provided as parameter to the from_stream\(\) '
-        'method\): The following field\(s\): private_key_id must be defined\.$',
-        self.get_a_google_credentials_object().from_stream, credentials_file)
+    # we can't use self.assertRaisesRegexp() because it is only in Python 2.7+
+    try:
+      self.get_a_google_credentials_object().from_stream(credentials_file)
+      self.fail('An exception was expected!')
+    except DefaultCredentialsError as error:
+      self.assertEqual('An error was encountered while reading json file: ' +
+                       credentials_file +
+                       ' (provided as parameter to the from_stream() method): '
+                       'The following field(s): private_key_id must be '
+                       'defined.',
+                       str(error))
 
   def test_from_stream_malformed_file_3(self):
     credentials_file = datafile(
