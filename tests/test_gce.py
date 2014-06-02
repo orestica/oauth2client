@@ -125,8 +125,9 @@ class AssertionCredentialsTests(unittest.TestCase):
     http = httplib2.Http()
     http.request = httplib2_request
 
-    self.assertEquals('this-is-a-token',
-                      credentials.get_access_token(http=http))
+    token = credentials.get_access_token(http=http)
+    self.assertEquals('this-is-a-token', token['access_token'])
+    self.assertIsNone(token['expires_in'])
 
     m.UnsetStubs()
     m.VerifyAll()
