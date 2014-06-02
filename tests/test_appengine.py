@@ -246,7 +246,7 @@ class TestAppAssertionCredentials(unittest.TestCase):
     credentials = AppAssertionCredentials(['dummy_scope'])
     token = credentials.get_access_token()
     self.assertEqual('a_token_123', token['access_token'])
-    self.assertIsNone(token['expires_in'])
+    self.assertEqual(None, token['expires_in'])
 
 
 class TestFlowModel(db.Model):
