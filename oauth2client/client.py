@@ -31,6 +31,7 @@ import time
 import urllib
 import urlparse
 
+from collections import namedtuple
 from oauth2client import GOOGLE_AUTH_URI
 from oauth2client import GOOGLE_REVOKE_URI
 from oauth2client import GOOGLE_TOKEN_URI
@@ -74,6 +75,9 @@ SERVICE_ACCOUNT = 'service_account'
 
 # The environment variable pointing the file with local Default Credentials.
 GOOGLE_CREDENTIALS_DEFAULT = 'GOOGLE_CREDENTIALS_DEFAULT'
+
+# The access token along with the seconds in which it expires.
+AccessTokenInfo = namedtuple('AccessTokenInfo', ['access_token', 'expires_in'])
 
 class Error(Exception):
   """Base error for this module."""
@@ -486,10 +490,12 @@ class OAuth2Credentials(Credentials):
         logger.info('Attempting refresh to obtain initial access_token')
         self._refresh(request_orig)
 
-      # Modify the request headers to add the appropriate
+      # Clone and modify the request headers to add the appropriate
       # Authorization header.
       if headers is None:
         headers = {}
+      else:
+        headers = dict(headers)
       self.apply(headers)
 
       if self.user_agent is not None:
@@ -609,7 +615,8 @@ class OAuth2Credentials(Credentials):
       if not http:
         http = httplib2.Http()
       self.refresh(http)
-    return {'access_token': self.access_token, 'expires_in': self._expires_in()}
+    return AccessTokenInfo(access_token=self.access_token,
+                           expires_in=self._expires_in())
 
   def set_store(self, store):
     """Set the Storage for the credential.
@@ -624,14 +631,23 @@ class OAuth2Credentials(Credentials):
     self.store = store
 
   def _expires_in(self):
-    """Get in how many seconds does the token expire."""
+    """Return the number of seconds until this token expires.
+
+    If token_expiry is in the past, this method will return 0, meaning the
+    token has already expired.
+    If token_expiry is None, this method will return None. Note that returning
+    0 in such a case would not be fair: the token may still be valid;
+    we just don't know anything about it.
+    """
     if self.token_expiry:
       now = datetime.datetime.utcnow()
       if self.token_expiry > now:
         time_delta = self.token_expiry - now
-        return int(round(time_delta.days * 86400.0 +
-                         time_delta.seconds +
-                         time_delta.microseconds * 0.000001))
+        # TODO(orestica): return time_delta.total_seconds()
+        # once dropping support for Python 2.6
+        return time_delta.days * 86400 + time_delta.seconds
+      else:
+        return 0
 
   def _updateFromCredential(self, other):
     """Update this Credential from another instance."""
@@ -861,7 +877,7 @@ def _get_environment(urllib2_urlopen=None):
   """Detect the environment the code is being run on."""
 
   global _env_name
-  
+
   if _env_name:
     return _env_name
 
@@ -888,7 +904,7 @@ def _get_environment(urllib2_urlopen=None):
 
 class GoogleCredentials(OAuth2Credentials):
   """Default credentials for use in calling Google APIs.
-  
+
   The Default Credentials are being constructed as a function of the environment
   where the code is being run. More details can be found on this page:
   https://developers.google.com/accounts/docs/default-credentials
@@ -949,20 +965,20 @@ class GoogleCredentials(OAuth2Credentials):
     super(GoogleCredentials, self).__init__(
         access_token, client_id, client_secret, refresh_token, token_expiry,
         token_uri, user_agent, revoke_uri=revoke_uri)
-    
+
   def create_scoped_required(self):
     """Whether this Credentials object is scopeless.
-    
+
     create_scoped(scopes) method needs to be called in order to create
     a Credentials object for API calls.
     """
     return False
-  
+
   def create_scoped(self, scopes):
     """Create a Credentials object for the given scopes.
-    
+
     The Credentials type is preserved.
-    """ 
+    """
     return self
 
   @staticmethod
@@ -1017,9 +1033,9 @@ class GoogleCredentials(OAuth2Credentials):
   @staticmethod
   def from_stream(credential_filename):
     """Create a Credentials object by reading the information from a given file.
-    
+
     It returns an object of type GoogleCredentials.
-    
+
     Args:
       credential_filename: the path to the file from where the credentials
         are to be read
@@ -1103,7 +1119,7 @@ def _get_default_credential_from_file(default_credential_filename):
                                   "' or '" + SERVICE_ACCOUNT + "' values)")
 
   missing_fields = required_fields.difference(client_credentials.keys())
-  
+
   if missing_fields:
     _raise_exception_for_missing_fields(missing_fields)
 
@@ -1494,6 +1510,7 @@ class OAuth2WebServerFlow(Flow):
                auth_uri=GOOGLE_AUTH_URI,
                token_uri=GOOGLE_TOKEN_URI,
                revoke_uri=GOOGLE_REVOKE_URI,
+               login_hint=None,
                **kwargs):
     """Constructor for OAuth2WebServerFlow.
 
@@ -1516,6 +1533,9 @@ class OAuth2WebServerFlow(Flow):
         defaults to Google's endpoints but any OAuth 2.0 provider can be used.
       revoke_uri: string, URI for revoke endpoint. For convenience
         defaults to Google's endpoints but any OAuth 2.0 provider can be used.
+      login_hint: string, Either an email address or domain. Passing this hint
+        will either pre-fill the email box on the sign-in form or select the
+        proper multi-login session, thereby simplifying the login flow.
       **kwargs: dict, The keyword arguments are all optional and required
                         parameters for the OAuth calls.
     """
@@ -1523,6 +1543,7 @@ class OAuth2WebServerFlow(Flow):
     self.client_secret = client_secret
     self.scope = util.scopes_to_string(scope)
     self.redirect_uri = redirect_uri
+    self.login_hint = login_hint
     self.user_agent = user_agent
     self.auth_uri = auth_uri
     self.token_uri = token_uri
@@ -1560,12 +1581,14 @@ class OAuth2WebServerFlow(Flow):
         'redirect_uri': self.redirect_uri,
         'scope': self.scope,
     }
+    if self.login_hint is not None:
+      query_params['login_hint'] = self.login_hint
     query_params.update(self.params)
     return _update_query_params(self.auth_uri, query_params)
 
   @util.positional(2)
   def step2_exchange(self, code, http=None):
-    """Exhanges a code for OAuth2Credentials.
+    """Exchanges a code for OAuth2Credentials.
 
     Args:
       code: string or dict, either the code as a string, or a dictionary
@@ -1581,7 +1604,7 @@ class OAuth2WebServerFlow(Flow):
       refresh_token.
     """
 
-    if not (isinstance(code, str) or isinstance(code, unicode)):
+    if not isinstance(code, basestring):
       if 'code' not in code:
         if 'error' in code:
           error_msg = code['error']
@@ -1615,6 +1638,10 @@ class OAuth2WebServerFlow(Flow):
     if resp.status == 200 and 'access_token' in d:
       access_token = d['access_token']
       refresh_token = d.get('refresh_token', None)
+      if not refresh_token:
+        logger.info(
+          'Received token response with no refresh_token. Consider '
+          "reauthenticating with approval_prompt='force'.")
       token_expiry = None
       if 'expires_in' in d:
         token_expiry = datetime.datetime.utcnow() + datetime.timedelta(
@@ -1642,7 +1669,7 @@ class OAuth2WebServerFlow(Flow):
 
 @util.positional(2)
 def flow_from_clientsecrets(filename, scope, redirect_uri=None,
-                            message=None, cache=None):
+                            message=None, cache=None, login_hint=None):
   """Create a Flow from a clientsecrets file.
 
   Will create the right kind of Flow based on the contents of the clientsecrets
@@ -1660,6 +1687,9 @@ def flow_from_clientsecrets(filename, scope, redirect_uri=None,
       provided then clientsecrets.InvalidClientSecretsError will be raised.
     cache: An optional cache service client that implements get() and set()
       methods. See clientsecrets.loadfile() for details.
+    login_hint: string, Either an email address or domain. Passing this hint
+      will either pre-fill the email box on the sign-in form or select the
+      proper multi-login session, thereby simplifying the login flow.
 
   Returns:
     A Flow object.
@@ -1676,6 +1706,7 @@ def flow_from_clientsecrets(filename, scope, redirect_uri=None,
           'redirect_uri': redirect_uri,
           'auth_uri': client_info['auth_uri'],
           'token_uri': client_info['token_uri'],
+          'login_hint': login_hint,
       }
       revoke_uri = client_info.get('revoke_uri')
       if revoke_uri is not None:
