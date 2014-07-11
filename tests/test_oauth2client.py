@@ -303,8 +303,7 @@ class GoogleCredentialsTests(unittest.TestCase):
       _get_application_default_credential_from_file(credentials_file)
       self.fail('An exception was expected!')
     except ApplicationDefaultCredentialsError as error:
-      self.assertEqual('The following field(s): '
-                       'private_key_id must be defined.',
+      self.assertEqual('The following field(s) must be defined: private_key_id',
                        str(error))
 
   def test_get_application_default_credential_from_malformed_file_3(self):
@@ -321,8 +320,8 @@ class GoogleCredentialsTests(unittest.TestCase):
       _raise_exception_for_missing_fields(missing_fields)
       self.fail('An exception was expected!')
     except ApplicationDefaultCredentialsError as error:
-      self.assertEqual('The following field(s): ' +
-                       ', '.join(missing_fields) + ' must be defined.',
+      self.assertEqual('The following field(s) must be defined: ' +
+                       ', '.join(missing_fields),
                        str(error))
 
   def test_raise_exception_for_reading_json(self):
@@ -446,8 +445,8 @@ class GoogleCredentialsTests(unittest.TestCase):
       self.assertEqual('An error was encountered while reading json file: ' +
                        credentials_file +
                        ' (provided as parameter to the from_stream() method): '
-                       'The following field(s): private_key_id must be '
-                       'defined.',
+                       'The following field(s) must be defined: '
+                       'private_key_id',
                        str(error))
 
   def test_from_stream_malformed_file_3(self):

@@ -921,8 +921,8 @@ class GoogleCredentials(OAuth2Credentials):
   PROJECT = 'bamboo-machine-422'  # replace this with one of your projects
   ZONE = 'us-central1-a'          # replace this with the zone you care about
 
-  service = build('compute', 'v1',
-                  credentials=GoogleCredentials.get_application_default())
+  credentials = GoogleCredentials.get_application_default()
+  service = build('compute', 'v1', credentials=credentials)
 
   request = service.instances().list(project=PROJECT, zone=ZONE)
   response = request.execute()
@@ -1116,8 +1116,8 @@ def _get_application_default_credential_from_file(
   # read the credentials from the file
   with open(application_default_credential_filename) as (
       application_default_credential):
-    client_credentials = (
-        service_account.simplejson.load(application_default_credential))
+    client_credentials = service_account.simplejson.load(
+        application_default_credential)
 
   credentials_type = client_credentials.get('type')
   if credentials_type == AUTHORIZED_USER:
@@ -1155,8 +1155,7 @@ def _get_application_default_credential_from_file(
 
 def _raise_exception_for_missing_fields(missing_fields):
   raise ApplicationDefaultCredentialsError(
-      'The following field(s): ' + ', '.join(missing_fields) +
-      ' must be defined.')
+      'The following field(s) must be defined: ' + ', '.join(missing_fields))
 
 
 def _raise_exception_for_reading_json(credential_file,
