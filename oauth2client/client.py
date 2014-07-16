@@ -998,8 +998,10 @@ class GoogleCredentials(OAuth2Credentials):
     else:
       well_known_file = _get_well_known_file()
 
+    credentials_data = self._get_credentials_data()
+
     with open(well_known_file, 'w') as f:
-      simplejson.dump(self._get_credentials_data(), f, sort_keys=True, indent=2)
+      simplejson.dump(credentials_data, f, sort_keys=True, indent=2)
 
   def _get_credentials_data(self):
     """Get the fields and their values identifying the current credentials."""
