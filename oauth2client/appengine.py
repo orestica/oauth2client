@@ -197,6 +197,9 @@ class AppAssertionCredentials(AssertionCredentials):
       raise AccessTokenRefreshError(str(e))
     self.access_token = token
 
+  def _get_credentials_data(self):
+    raise NotImplementedError('No credentials data for App Engine.')
+
   def create_scoped_required(self):
     return not self.scope
 

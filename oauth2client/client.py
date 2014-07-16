@@ -985,6 +985,31 @@ class GoogleCredentials(OAuth2Credentials):
     """
     return self
 
+  def save_to_well_known_file(self, test_well_known_file=None):
+    """Save the current GoogleCredentials to the well known file.
+
+    Args:
+      test_well_known_file:
+        the name of the file where the credentials are to be saved;
+        this parameter is supposed to be used for testing only
+    """
+    if test_well_known_file:
+      well_known_file = test_well_known_file
+    else:
+      well_known_file = _get_well_known_file()
+
+    with open(well_known_file, 'w') as f:
+      simplejson.dump(self._get_credentials_data(), f, sort_keys=True, indent=2)
+
+  def _get_credentials_data(self):
+    """Get the fields and their values identifying the current credentials."""
+    credentials_data = {}
+    credentials_data['type'] = 'authorized_user'
+    credentials_data['client_id'] = self.client_id
+    credentials_data['client_secret'] = self.client_secret
+    credentials_data['refresh_token'] = self.refresh_token
+    return credentials_data
+
   @staticmethod
   def get_application_default():
     """Get the Application Default Credentials for the current environment.
@@ -1004,6 +1029,8 @@ class GoogleCredentials(OAuth2Credentials):
     else:
       application_default_credential_filename = _get_environment_variable_file()
       well_known_file = _get_well_known_file()
+      if not os.path.isfile(well_known_file):
+        well_known_file = None
 
     if application_default_credential_filename:
       try:
@@ -1103,8 +1130,7 @@ def _get_well_known_file():
   default_config_path = os.path.join(default_config_path,
                                      WELL_KNOWN_CREDENTIALS_FILE)
 
-  if os.path.isfile(default_config_path):
-    return default_config_path
+  return default_config_path
 
 
 def _get_application_default_credential_from_file(

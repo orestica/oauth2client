@@ -131,4 +131,7 @@ class AssertionCredentialsTests(unittest.TestCase):
 
     m.UnsetStubs()
     m.VerifyAll()
-    
+
+  def test_save_to_well_known_file(self):
+    credentials = AppAssertionCredentials([])
+    self.assertRaises(NotImplementedError, credentials.save_to_well_known_file)

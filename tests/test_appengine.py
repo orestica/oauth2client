@@ -248,6 +248,10 @@ class TestAppAssertionCredentials(unittest.TestCase):
     self.assertEqual('a_token_123', token.access_token)
     self.assertEqual(None, token.expires_in)
 
+  def test_save_to_well_known_file(self):
+    credentials = AppAssertionCredentials([])
+    self.assertRaises(NotImplementedError, credentials.save_to_well_known_file)
+
 
 class TestFlowModel(db.Model):
   flow = FlowProperty()

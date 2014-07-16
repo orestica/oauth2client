@@ -93,6 +93,9 @@ class AppAssertionCredentials(AssertionCredentials):
             ' with no service account or scopes.')
       raise AccessTokenRefreshError(content)
 
+  def _get_credentials_data(self):
+    raise NotImplementedError('No credentials data for GCE.')
+
   def create_scoped_required(self):
     return not self.scope
 

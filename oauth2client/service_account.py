@@ -92,6 +92,15 @@ class _ServiceAccountCredentials(AssertionCredentials):
   def service_account_email(self):
     return self._service_account_email
 
+  def _get_credentials_data(self):
+    credentials_data = {}
+    credentials_data['type'] = 'service_account'
+    credentials_data['client_id'] = self._service_account_id
+    credentials_data['client_email'] = self._service_account_email
+    credentials_data['private_key_id'] = self._private_key_id
+    credentials_data['private_key'] = self._private_key_pkcs8_text
+    return credentials_data
+
   def create_scoped_required(self):
     return not self._scopes
 
