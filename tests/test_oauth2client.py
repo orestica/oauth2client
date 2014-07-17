@@ -67,9 +67,9 @@ from oauth2client.client import _update_query_params
 from oauth2client.client import credentials_from_clientsecrets_and_code
 from oauth2client.client import credentials_from_code
 from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import save_to_well_known_file
 from oauth2client.clientsecrets import _loadfile
 from oauth2client.service_account import _ServiceAccountCredentials
-from oauth2client.tools import save_to_well_known_file
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 

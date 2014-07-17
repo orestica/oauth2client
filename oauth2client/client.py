@@ -1076,6 +1076,26 @@ class GoogleCredentials(OAuth2Credentials):
           'method should point to a file.')
 
 
+def save_to_well_known_file(credentials, well_known_file=None):
+  """Save the provided GoogleCredentials to the well known file.
+
+  Args:
+    credentials:
+      the credentials to be saved to the well known file;
+      it should be an instance of GoogleCredentials
+    well_known_file:
+      the name of the file where the credentials are to be saved;
+      this parameter is supposed to be used for testing only
+  """
+  if well_known_file is None:
+    well_known_file = _get_well_known_file()
+
+  credentials_data = credentials.serialization_data
+
+  with open(well_known_file, 'w') as f:
+    simplejson.dump(credentials_data, f, sort_keys=True, indent=2)
+
+
 def _get_environment_variable_file():
   application_default_credential_filename = (
       os.environ.get(GOOGLE_APPLICATION_CREDENTIALS,
