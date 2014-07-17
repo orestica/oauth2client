@@ -69,7 +69,7 @@ from oauth2client.client import Credentials
 from oauth2client.client import FlowExchangeError
 from oauth2client.client import OAuth2Credentials
 from oauth2client.client import flow_from_clientsecrets
-from oauth2client.client import save_to_well_known_file
+from oauth2client.tools import save_to_well_known_file
 from webtest import TestApp
 
 

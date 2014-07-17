@@ -199,7 +199,7 @@ class AppAssertionCredentials(AssertionCredentials):
 
   @property
   def serialization_data(self):
-    raise NotImplementedError('No credentials data for App Engine.')
+    raise NotImplementedError('Cannot serialize credentials for AppEngine.')
 
   def create_scoped_required(self):
     return not self.scope

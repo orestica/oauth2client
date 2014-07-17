@@ -95,7 +95,8 @@ class AppAssertionCredentials(AssertionCredentials):
 
   @property
   def serialization_data(self):
-    raise NotImplementedError('No credentials data for GCE.')
+    raise NotImplementedError(
+        'Cannot serialize credentials for GCE service accounts.')
 
   def create_scoped_required(self):
     return not self.scope

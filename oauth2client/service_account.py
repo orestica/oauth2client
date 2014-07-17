@@ -94,13 +94,13 @@ class _ServiceAccountCredentials(AssertionCredentials):
 
   @property
   def serialization_data(self):
-    credentials_data = {}
-    credentials_data['type'] = 'service_account'
-    credentials_data['client_id'] = self._service_account_id
-    credentials_data['client_email'] = self._service_account_email
-    credentials_data['private_key_id'] = self._private_key_id
-    credentials_data['private_key'] = self._private_key_pkcs8_text
-    return credentials_data
+    return {
+        'type': 'service_account',
+        'client_id': self._service_account_id,
+        'client_email': self._service_account_email,
+        'private_key_id': self._private_key_id,
+        'private_key': self._private_key_pkcs8_text
+    }
 
   def create_scoped_required(self):
     return not self._scopes

@@ -26,8 +26,8 @@ import unittest
 
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import Credentials
-from oauth2client.client import save_to_well_known_file
 from oauth2client.gce import AppAssertionCredentials
+from oauth2client.tools import save_to_well_known_file
 
 
 class AssertionCredentialsTests(unittest.TestCase):
