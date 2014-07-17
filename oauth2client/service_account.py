@@ -92,7 +92,8 @@ class _ServiceAccountCredentials(AssertionCredentials):
   def service_account_email(self):
     return self._service_account_email
 
-  def _get_credentials_data(self):
+  @property
+  def serialization_data(self):
     credentials_data = {}
     credentials_data['type'] = 'service_account'
     credentials_data['client_id'] = self._service_account_id

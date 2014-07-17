@@ -985,25 +985,8 @@ class GoogleCredentials(OAuth2Credentials):
     """
     return self
 
-  def save_to_well_known_file(self, test_well_known_file=None):
-    """Save the current GoogleCredentials to the well known file.
-
-    Args:
-      test_well_known_file:
-        the name of the file where the credentials are to be saved;
-        this parameter is supposed to be used for testing only
-    """
-    if test_well_known_file:
-      well_known_file = test_well_known_file
-    else:
-      well_known_file = _get_well_known_file()
-
-    credentials_data = self._get_credentials_data()
-
-    with open(well_known_file, 'w') as f:
-      simplejson.dump(credentials_data, f, sort_keys=True, indent=2)
-
-  def _get_credentials_data(self):
+  @property
+  def serialization_data(self):
     """Get the fields and their values identifying the current credentials."""
     credentials_data = {}
     credentials_data['type'] = 'authorized_user'
@@ -1091,6 +1074,28 @@ class GoogleCredentials(OAuth2Credentials):
       raise ApplicationDefaultCredentialsError(
           'The parameter passed to the from_stream() '
           'method should point to a file.')
+
+
+def save_to_well_known_file(credentials, test_well_known_file=None):
+  """Save the provided GoogleCredentials to the well known file.
+
+  Args:
+    credentials:
+      the credentials to be saved to the well known file;
+      it should be an instance of GoogleCredentials
+    test_well_known_file:
+      the name of the file where the credentials are to be saved;
+      this parameter is supposed to be used for testing only
+  """
+  if test_well_known_file:
+    well_known_file = test_well_known_file
+  else:
+    well_known_file = _get_well_known_file()
+
+  credentials_data = credentials.serialization_data
+
+  with open(well_known_file, 'w') as f:
+    simplejson.dump(credentials_data, f, sort_keys=True, indent=2)
 
 
 def _get_environment_variable_file():

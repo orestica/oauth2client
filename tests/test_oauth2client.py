@@ -67,6 +67,7 @@ from oauth2client.client import _update_query_params
 from oauth2client.client import credentials_from_clientsecrets_and_code
 from oauth2client.client import credentials_from_code
 from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import save_to_well_known_file
 from oauth2client.clientsecrets import _loadfile
 from oauth2client.service_account import _ServiceAccountCredentials
 
@@ -274,7 +275,7 @@ class GoogleCredentialsTests(unittest.TestCase):
         credential_file)
     temp_credential_file = datafile(
         os.path.join('gcloud', 'temp_well_known_file_service_account.json'))
-    credentials.save_to_well_known_file(temp_credential_file)
+    save_to_well_known_file(credentials, temp_credential_file)
     with open(temp_credential_file) as f:
       d = simplejson.load(f)
     self.assertEqual('service_account', d['type'])
@@ -299,7 +300,7 @@ class GoogleCredentialsTests(unittest.TestCase):
         credentials_file)
     temp_credential_file = datafile(
         os.path.join('gcloud', 'temp_well_known_file_authorized_user.json'))
-    credentials.save_to_well_known_file(temp_credential_file)
+    save_to_well_known_file(credentials, temp_credential_file)
     with open(temp_credential_file) as f:
       d = simplejson.load(f)
     self.assertEqual('authorized_user', d['type'])
